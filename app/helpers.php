@@ -13,6 +13,10 @@ function e(mixed $value): string
 /** URL base del sitio sin barra final, definida en la instalación. */
 function base_url(): string
 {
+    // Servidor de desarrollo (php -S): usa el host y puerto reales de la petición, sin importar lo guardado al instalar.
+    if (PHP_SAPI === 'cli-server' && !empty($_SERVER['HTTP_HOST'])) {
+        return 'http://' . $_SERVER['HTTP_HOST'];
+    }
     return rtrim((string) Config::get('base_url', ''), '/');
 }
 
