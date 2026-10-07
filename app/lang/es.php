@@ -108,7 +108,7 @@ return [
     'home.write_review' => 'Escribir un review',
     'home.client' => 'Cliente',
     'home.location' => 'Nuestra ubicación',
-    'home.location_text' => '<p>Zazil Tunich se encuentra en Valladolid, Yucatán, a solo 45 km de Chichén Itzá, una de las Siete Maravillas del Mundo, y a unas 2 horas de Cancún y Playa del Carmen. Llegar es fácil por la Carretera Yalcobá-Xtut Km. 6, a pocos minutos del centro de Valladolid, Pueblo Mágico.</p><p>Ven a vivir un cenote museo único, rodeado de naturaleza, cultura y exclusividad.</p>',
+    'home.location_text' => '<p>Nos encontramos en el Pueblo Mágico de México Valladolid, ubicado entre 4 de las zonas arqueológicas más importantes de México, a 45 km de la maravilla del mundo moderno Chichen Itzá, a 20 km de la Zona Arqueológica de Ekbalam, a 40 km de la Zona Arqueológica de Cobá y a 100 km de la Zona Arqueológica de Tulum.</p><p>Esto permite que hospedarte y despertar con nosotros puedas tener varios días de recorridos muy interesantes para conocer una de las regiones más ricas en Cultura Maya de este gran Mundo Maya de una manera más cómoda y poder disfrutarlo mejor, ¡VEN Y VÍVELO!</p>',
     'footer.contactpage' => 'Contacto',
     'footer.howto' => 'Cómo llegar',
     'footer.copy' => 'Copyright ©',
