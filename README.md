@@ -17,6 +17,9 @@ PHP 8.1+ y MySQL/MariaDB, sin frameworks ni Composer. Se instala subiendo una ca
 
 Instalación por consola (desarrollo): `php bin/install.php --driver=sqlite --path=storage/dev.sqlite --url=http://localhost:8080 --email=tu@correo.com --password=minimo10caracteres` y `php -S localhost:8080 -t public public/index.php`.
 
+## Despliegue en VPS
+Ver `deploy/DEPLOY-VPS.md` (Nginx/Apache, subdominio, deploy key de GitHub, importador y `deploy/update.sh`).
+
 ## Pruebas
 `php tests/run.php` (SQLite en memoria) o contra MySQL: `ZT_MYSQL_DB=base ZT_MYSQL_USER=u ZT_MYSQL_PASS=p php tests/run.php` (**borra las tablas de esa base**).
 
