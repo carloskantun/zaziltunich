@@ -46,9 +46,14 @@ final class Content
         return $out;
     }
 
-    public static function posts(int $limit = 24): array
+    public static function postCount(): int
     {
-        $rows = DB::all("SELECT * FROM posts WHERE status = 'published' AND published_at <= ? ORDER BY published_at DESC, id DESC LIMIT " . (int) $limit, [now_site()->format('Y-m-d H:i:s')]);
+        return (int) DB::value("SELECT COUNT(*) FROM posts WHERE status = 'published' AND published_at <= ?", [now_site()->format('Y-m-d H:i:s')]);
+    }
+
+    public static function posts(int $limit = 24, int $offset = 0): array
+    {
+        $rows = DB::all("SELECT * FROM posts WHERE status = 'published' AND published_at <= ? ORDER BY published_at DESC, id DESC LIMIT " . (int) $limit . " OFFSET " . (int) $offset, [now_site()->format('Y-m-d H:i:s')]);
         foreach ($rows as &$r) {
             $r['t'] = self::tr('post_translations', 'post_id', (int) $r['id']);
         }

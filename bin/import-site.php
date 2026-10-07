@@ -12,7 +12,8 @@ declare(strict_types=1);
  * Opciones:
  *   --only=site,products,blog,pages     solo una parte (por defecto todo)
  *   --base=https://zaziltunich.com      sitio de origen
- *   --posts=3                           cuántas entradas de blog traer
+ *   --all                               TODO el sitio: todos los productos, las ~150 entradas del blog y todas las páginas
+ *   --posts=3                           cuántas entradas de blog traer (o --posts=all)
  *   --hero=URL  --logo=URL              forzar la portada o el logo si la detección falla
  *   --map=slug=URL                      forzar la URL de un producto (repetible)
  *
@@ -34,7 +35,9 @@ if (!tableExists('pages')) {
 
 $opts = ['only' => 'site,products,blog,pages', 'base' => 'https://zaziltunich.com', 'posts' => '3', 'hero' => '', 'logo' => '', 'map' => []];
 foreach (array_slice($argv, 1) as $a) {
-    if (preg_match('/^--(\w+)=(.*)$/s', $a, $m)) {
+    if ($a === '--all') {
+        $opts['all'] = '1';
+    } elseif (preg_match('/^--(\w+)=(.*)$/s', $a, $m)) {
         if ($m[1] === 'map') {
             [$k, $v] = array_pad(explode('=', $m[2], 2), 2, '');
             $opts['map'][$k] = $v;
@@ -71,7 +74,9 @@ function http(string $url, array $headers = []): ?string
     global $BASE;
     // Enlaces viejos http://www.… del mismo sitio → https sin www
     $bh = (string) parse_url($BASE, PHP_URL_HOST);
-    $url = preg_replace('#^http://(?:www\.)?' . preg_quote($bh, '#') . '#i', 'https://' . $bh, $url) ?? $url;
+    if (str_starts_with($BASE, 'https://')) {
+        $url = preg_replace('#^http://(?:www\.)?' . preg_quote($bh, '#') . '#i', 'https://' . $bh, $url) ?? $url;
+    }
     $url = preg_replace('#^(https?://)www\.' . preg_quote($bh, '#') . '#i', '$1' . $bh, $url) ?? $url;
     $h = array_merge(['User-Agent: Mozilla/5.0 (ZazilTunichImporter)', 'Accept-Language: es,en;q=0.8'], $headers);
     if (function_exists('curl_init')) {
@@ -592,8 +597,10 @@ function parseProduct(string $html, string $url): array
 }
 
 if (in_array('products', $ONLY, true)) {
-    say('== Productos (muestra de 5)');
-    $slugs = ['cenote-museo', 'inframundo-maya', 'comida-en-cenote-huinik', 'cena-romantica-huinik', 'noches-de-xibalba'];
+    say(isset($opts['all']) ? '== Productos (todos)' : '== Productos (muestra de 5)');
+    $slugs = isset($opts['all'])
+        ? array_column(DB::all('SELECT slug FROM experiences ORDER BY sort_order, id'), 'slug')
+        : ['cenote-museo', 'inframundo-maya', 'comida-en-cenote-huinik', 'cena-romantica-huinik', 'noches-de-xibalba'];
     $sitemap = sitemapUrls($BASE);
     say('   sitemap: ' . count($sitemap) . ' URLs');
     foreach ($slugs as $slug) {
@@ -604,7 +611,7 @@ if (in_array('products', $ONLY, true)) {
         }
         $esUrl = $opts['map'][$slug] ?? findUrlForSlug($slug, $sitemap, $BASE);
         if (!$esUrl) {
-            say("   ! $slug: no encontré la página (usa --map=$slug=URL)");
+            say("   ! $slug: no existe en el sitio actual" . (isset($opts['all']) ? ' (producto nuevo, se deja como está)' : " (usa --map=$slug=URL)"));
             continue;
         }
         say("-- $slug  ←  $esUrl");
@@ -650,65 +657,88 @@ if (in_array('products', $ONLY, true)) {
 }
 
 // ================================================================ 3. BLOG
+/** Contenido principal de un artículo (HTML completo de la página). */
+function articleBody(DOMXPath $x): ?DOMNode
+{
+    foreach (['//*[' . hasClass('elementor-widget-theme-post-content') . ']', '//*[' . hasClass('entry-content') . ']', '//*[' . hasClass('post-content') . ']', '//article'] as $qq) {
+        $r = q($x, $qq);
+        if ($r) {
+            return $r[0];
+        }
+    }
+    return null;
+}
+
 if (in_array('blog', $ONLY, true)) {
-    say('== Blog (muestra)');
-    $n = max(1, (int) $opts['posts']);
-    $json = http($BASE . '/wp-json/wp/v2/posts?per_page=' . $n . '&_embed=1&orderby=date&order=desc');
-    $list = $json ? json_decode($json, true) : null;
-    if (!is_array($list) || !$list) {
+    $all = isset($opts['all']) || $opts['posts'] === 'all';
+    say($all ? '== Blog (todas las entradas)' : '== Blog (muestra)');
+    $limit = $all ? PHP_INT_MAX : max(1, (int) $opts['posts']);
+    $list = [];
+    for ($page = 1; count($list) < $limit; $page++) {
+        $json = http($BASE . '/wp-json/wp/v2/posts?per_page=' . min(100, $limit) . '&page=' . $page . '&_embed=1&orderby=date&order=desc');
+        $chunk = $json ? json_decode($json, true) : null;
+        if (!is_array($chunk) || !$chunk || isset($chunk['code'])) {
+            break;
+        }
+        $list = array_merge($list, $chunk);
+        if (count($chunk) < min(100, $limit)) {
+            break;
+        }
+    }
+    $list = array_slice($list, 0, $limit);
+    if (!$list) {
         say('   ! no pude leer /wp-json/wp/v2/posts (¿REST API desactivada?)');
-    } else {
-        // Traducciones EN (Polylang): intentar por id de traducción, si no, por lista ?lang=en
-        $enList = [];
-        $ej = http($BASE . '/wp-json/wp/v2/posts?lang=en&per_page=30&_embed=1');
-        foreach ((array) json_decode((string) $ej, true) as $p) {
-            if (is_array($p) && isset($p['id'])) {
-                $enList[(int) $p['id']] = $p;
+    }
+    $total = count($list);
+    foreach ($list as $idx => $p) {
+        $slug = (string) ($p['slug'] ?? '');
+        if ($slug === '') {
+            continue;
+        }
+        $pageUrl = (string) ($p['link'] ?? $BASE . '/blog/' . $slug . '/');
+        say(sprintf('-- [%d/%d] %s', $idx + 1, $total, $slug));
+        $imgUrl = (string) ($p['_embedded']['wp:featuredmedia'][0]['source_url'] ?? '');
+        $img = $imgUrl ? saveImage($imgUrl, 'blog') : null;
+        $date = date('Y-m-d H:i:s', strtotime((string) ($p['date'] ?? 'now')));
+        $row = DB::one('SELECT id FROM posts WHERE slug = ?', [$slug]);
+        $data = ['status' => 'published', 'image' => $img, 'published_at' => $date, 'updated_at' => $now];
+        $pid = $row ? (int) $row['id'] : 0;
+        if ($pid) {
+            DB::update('posts', $data, 'id = ?', [$pid]);
+        } else {
+            $pid = DB::insert('posts', $data + ['slug' => $slug]);
+        }
+        $title = trim(html_entity_decode(strip_tags((string) ($p['title']['rendered'] ?? ''))));
+        $x = dom('<div id="r">' . (string) ($p['content']['rendered'] ?? '') . '</div>');
+        $node = q($x, '//*[@id="r"]')[0] ?? null;
+        $content = $node ? tidy(cleanNode($node, $pageUrl, 'blog')) : '';
+        $ex = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) ($p['excerpt']['rendered'] ?? '')))));
+        $ex = preg_replace('/\s*(\[…\]|\[&hellip;\]|Read more.*|Leer más.*)$/iu', '', $ex);
+        upsertTr('post_translations', 'post_id', $pid, 'es', ['title' => $title, 'excerpt' => mb_strimwidth((string) $ex, 0, 280, '…'), 'content' => $content]);
+
+        // EN: la página /en/… (TranslatePress) con el mismo slug
+        $enHtml = http(enUrl($pageUrl, $BASE));
+        $done = false;
+        if ($enHtml) {
+            $ex2 = dom($enHtml);
+            $body = articleBody($ex2);
+            $h1 = q($ex2, '//h1');
+            if ($body && $h1) {
+                $enTitle = trim(preg_replace('/\s+/u', ' ', $h1[0]->textContent));
+                $enContent = tidy(cleanNode($body, enUrl($pageUrl, $BASE), 'blog'));
+                $t = q($ex2, '//title');
+                if ($enContent !== '') {
+                    upsertTr('post_translations', 'post_id', $pid, 'en', [
+                        'title' => $enTitle, 'content' => $enContent,
+                        'excerpt' => mb_strimwidth(meta($ex2, 'og:description') ?: meta($ex2, 'description'), 0, 280, '…'),
+                        'seo_title' => $t ? trim(preg_replace('/\s+/u', ' ', $t[0]->textContent)) : '',
+                    ]);
+                    $done = true;
+                }
             }
         }
-        foreach ($list as $p) {
-            $slug = (string) ($p['slug'] ?? '');
-            if ($slug === '') {
-                continue;
-            }
-            say("-- $slug");
-            $pageUrl = (string) ($p['link'] ?? $BASE . '/' . $slug . '/');
-            $imgUrl = (string) ($p['_embedded']['wp:featuredmedia'][0]['source_url'] ?? '');
-            $img = $imgUrl ? saveImage($imgUrl, 'blog') : null;
-            $date = date('Y-m-d H:i:s', strtotime((string) ($p['date'] ?? 'now')));
-            $row = DB::one('SELECT id FROM posts WHERE slug = ?', [$slug]);
-            $data = ['status' => 'published', 'image' => $img, 'published_at' => $date, 'updated_at' => $now];
-            $pid = $row ? (int) $row['id'] : 0;
-            if ($pid) {
-                DB::update('posts', $data, 'id = ?', [$pid]);
-            } else {
-                $pid = DB::insert('posts', $data + ['slug' => $slug]);
-            }
-            $conv = static function (array $post, string $url) {
-                $title = trim(html_entity_decode(strip_tags((string) ($post['title']['rendered'] ?? ''))));
-                $x = dom('<div id="r">' . (string) ($post['content']['rendered'] ?? '') . '</div>');
-                $node = q($x, '//*[@id="r"]')[0] ?? null;
-                $content = $node ? tidy(cleanNode($node, $url, 'blog')) : '';
-                $ex = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) ($post['excerpt']['rendered'] ?? '')))));
-                $ex = preg_replace('/\s*(\[…\]|\[&hellip;\]|Read more.*|Leer más.*)$/iu', '', $ex);
-                return ['title' => $title, 'excerpt' => mb_strimwidth((string) $ex, 0, 280, '…'), 'content' => $content];
-            };
-            upsertTr('post_translations', 'post_id', $pid, 'es', $conv($p, $pageUrl));
-            // EN: por mapa de traducciones de Polylang
-            $enId = (int) ($p['translations']['en'] ?? 0);
-            $enPost = $enId ? ($enList[$enId] ?? null) : null;
-            if (!$enPost && $enId) {
-                $one = http($BASE . '/wp-json/wp/v2/posts/' . $enId . '?_embed=1');
-                $enPost = $one ? json_decode($one, true) : null;
-            }
-            if (is_array($enPost) && isset($enPost['title'])) {
-                upsertTr('post_translations', 'post_id', $pid, 'en', $conv($enPost, (string) ($enPost['link'] ?? $pageUrl)));
-                say('   ES + EN');
-            } else {
-                say('   solo ES (no encontré traducción EN)');
-            }
-            $stats['posts']++;
-        }
+        say($done ? '   ES + EN' : '   solo ES (no pude leer la versión EN)');
+        $stats['posts']++;
     }
 }
 
@@ -725,9 +755,31 @@ if (in_array('pages', $ONLY, true)) {
         'fundacion' => ['ONG', 'NGO', 50, 0, ''],
         'faq' => ['FAQs', 'FAQs', 100, 0, ''],
     ];
+    $pageUrls = [];
+    if (isset($opts['all'])) {
+        $skip = ['carrito', 'finalizar-compra', 'mi-cuenta', 'cart', 'checkout', 'my-account', 'tienda', 'shop', 'reservaciones', 'blog', 'wp-login'];
+        $px = http($BASE . '/page-sitemap.xml');
+        if ($px && preg_match_all('#<loc>\s*([^<\s]+)\s*</loc>#', $px, $mm)) {
+            foreach ($mm[1] as $u) {
+                $path = trim((string) parse_url($u, PHP_URL_PATH), '/');
+                if ($path === '' || str_starts_with($path, 'en/') || $path === 'en') {
+                    continue;
+                }
+                $sl = basename($path);
+                if (in_array($sl, $skip, true)) {
+                    continue;
+                }
+                $pageUrls[$sl] = $u;
+                if (!isset($pages[$sl])) {
+                    $pages[$sl] = ['', '', 200, 0, ''];
+                }
+            }
+        }
+        say('   páginas encontradas en el sitemap: ' . count($pageUrls));
+    }
     foreach ($pages as $slug => [$lEs, $lEn, $sort, $dark, $enPath]) {
-        $esUrl = $slug === 'inicio' ? $BASE . '/' : $BASE . '/' . $slug . '/';
-        $enUrl = $slug === 'inicio' ? $BASE . '/en/' : $BASE . '/en/' . ($enPath ?: $slug) . '/';
+        $esUrl = $slug === 'inicio' ? $BASE . '/' : ($pageUrls[$slug] ?? $BASE . '/' . $slug . '/');
+        $enUrl = $slug === 'inicio' ? $BASE . '/en/' : (isset($pageUrls[$slug]) ? enUrl($pageUrls[$slug], $BASE) : $BASE . '/en/' . ($enPath ?: $slug) . '/');
         $parse = static function (string $url, string $imgDir) use ($slug) {
             $html = http($url);
             if (!$html) {
@@ -777,7 +829,7 @@ if (in_array('pages', $ONLY, true)) {
         }
         $hero = $es['og'] && $slug !== 'inicio' ? saveImage($es['og'], 'paginas') : null;
         $existing = DB::one('SELECT id FROM pages WHERE slug = ?', [$slug]);
-        $data = ['status' => 'published', 'dark' => $dark, 'show_in_nav' => $slug === 'inicio' ? 0 : 1, 'sort_order' => $sort, 'updated_at' => $now];
+        $data = ['status' => 'published', 'dark' => $dark, 'show_in_nav' => ($slug === 'inicio' || $sort >= 200) ? 0 : 1, 'sort_order' => $sort, 'updated_at' => $now];
         if ($hero) {
             $data['hero_image'] = $hero;
         }

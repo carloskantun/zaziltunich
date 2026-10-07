@@ -10,7 +10,10 @@ final class ContentController
 {
     public function blog(): void
     {
-        View::render('public/blog', ['title' => t('nav.blog'), 'posts' => Content::posts(), 'bodyClass' => 'light']);
+        $per = 12;
+        $pages = max(1, (int) ceil(Content::postCount() / $per));
+        $cur = min($pages, max(1, (int) ($_GET['p'] ?? 1)));
+        View::render('public/blog', ['title' => t('nav.blog'), 'posts' => Content::posts($per, ($cur - 1) * $per), 'page' => $cur, 'pages' => $pages, 'bodyClass' => 'light']);
     }
 
     public function post(array $p): void

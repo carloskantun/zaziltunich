@@ -11,4 +11,12 @@
     </div>
   </article>
 <?php endforeach; ?>
-</div></div></section>
+</div>
+<?php if (($pages ?? 1) > 1): ?>
+  <nav class="pager" aria-label="Blog">
+    <?php if ($page > 1): ?><a href="<?= e(url('/blog') . '?p=' . ($page - 1)) ?>">‹</a><?php endif; ?>
+    <?php for ($i = 1; $i <= $pages; $i++): ?><a href="<?= e(url('/blog') . '?p=' . $i) ?>"<?= $i === $page ? ' class="on"' : '' ?>><?= $i ?></a><?php endfor; ?>
+    <?php if ($page < $pages): ?><a href="<?= e(url('/blog') . '?p=' . ($page + 1)) ?>">›</a><?php endif; ?>
+  </nav>
+<?php endif; ?>
+</div></section>
