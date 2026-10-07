@@ -68,6 +68,11 @@ function say(string $m): void
 // ---------------------------------------------------------------- red
 function http(string $url, array $headers = []): ?string
 {
+    global $BASE;
+    // Enlaces viejos http://www.… del mismo sitio → https sin www
+    $bh = (string) parse_url($BASE, PHP_URL_HOST);
+    $url = preg_replace('#^http://(?:www\.)?' . preg_quote($bh, '#') . '#i', 'https://' . $bh, $url) ?? $url;
+    $url = preg_replace('#^(https?://)www\.' . preg_quote($bh, '#') . '#i', '$1' . $bh, $url) ?? $url;
     $h = array_merge(['User-Agent: Mozilla/5.0 (ZazilTunichImporter)', 'Accept-Language: es,en;q=0.8'], $headers);
     if (function_exists('curl_init')) {
         $c = curl_init($url);
@@ -366,9 +371,9 @@ if (in_array('site', $ONLY, true)) {
         }
     }
     if ($homeX && $logo === '') {
-        foreach (q($homeX, '//img') as $img) {
+        foreach (array_merge(q($homeX, '//header//img'), q($homeX, '//*[' . hasClass('elementor-widget-theme-site-logo') . ']//img'), q($homeX, '//img')) as $img) {
             $s = $img->getAttribute('data-lazy-src') ?: $img->getAttribute('src');
-            if (preg_match('/logo/i', $s . ' ' . $img->getAttribute('class') . ' ' . $img->getAttribute('alt'))) {
+            if (str_contains($s, '/uploads/') && !preg_match('/flag|favicon/i', $s) && (preg_match('/logo/i', $s . ' ' . $img->getAttribute('class') . ' ' . $img->getAttribute('alt')) || $img->parentNode && in_array($img->parentNode->nodeName, ['a'], true) && $img->getAttribute('width') !== '')) {
                 $logo = absUrl($s, $BASE . '/');
                 break;
             }
@@ -391,6 +396,9 @@ if (in_array('site', $ONLY, true)) {
         }
     } else {
         say('   ! no encontré la portada (usa --hero=URL)');
+    }
+    if ($logo === '') {
+        $logo = $BASE . '/wp-content/uploads/2024/10/2.png'; // logo conocido del sitio
     }
     if ($logo !== '') {
         $bin = http($logo);
@@ -482,15 +490,23 @@ function parseProduct(string $html, string $url): array
     }
     $r['images'] = array_values($seen);
 
-    // Pestañas de Elementor, emparejadas por data-tab
+    // Pestañas de Elementor: contenedores anidados (e-n-tab-title ↔ aria-controls) o clásicas (data-tab)
     $tabs = [];
-    foreach (q($x, '//*[' . hasClass('elementor-tab-title') . ']') as $tt) {
-        $i = $tt->getAttribute('data-tab');
-        $tabs[$i]['title'] = trim(preg_replace('/\s+/u', ' ', $tt->textContent));
+    foreach (q($x, '//*[' . hasClass('e-n-tab-title') . ' and @aria-controls]') as $tt) {
+        $panel = q($x, '//*[@id="' . $tt->getAttribute('aria-controls') . '"]');
+        if ($panel) {
+            $tabs[] = ['title' => trim(preg_replace('/\s+/u', ' ', $tt->textContent)), 'node' => $panel[0]];
+        }
     }
-    foreach (q($x, '//*[' . hasClass('elementor-tab-content') . ']') as $tc) {
-        $i = $tc->getAttribute('data-tab');
-        $tabs[$i]['node'] = $tc;
+    if (!$tabs) {
+        $byIdx = [];
+        foreach (q($x, '//*[' . hasClass('elementor-tab-title') . ']') as $tt) {
+            $byIdx[$tt->getAttribute('data-tab')]['title'] = trim(preg_replace('/\s+/u', ' ', $tt->textContent));
+        }
+        foreach (q($x, '//*[' . hasClass('elementor-tab-content') . ']') as $tc) {
+            $byIdx[$tc->getAttribute('data-tab')]['node'] = $tc;
+        }
+        $tabs = array_values($byIdx);
     }
     $f = [];
     foreach ($tabs as $tab) {
@@ -499,6 +515,11 @@ function parseProduct(string $html, string $url): array
         }
         $title = mb_strtolower($tab['title'] ?? '');
         $text = plainClean($tab['node']);
+        // el panel repite su propio encabezado ("Descripción", "¿Qué llevar?"): quitarlo
+        $parts = explode("\n", $text, 2);
+        if (count($parts) === 2 && mb_strlen($parts[0]) <= 40 && preg_match('/descrip|incluy|llevar|bring|itiner|includ|^preguntas/iu', $parts[0])) {
+            $text = trim($parts[1]);
+        }
         if ($text === '') {
             continue;
         }
