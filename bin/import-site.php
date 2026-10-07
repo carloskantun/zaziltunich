@@ -273,6 +273,158 @@ function sliderBlock(DOMElement $c, string $pageUrl, string $imgDir): string
     return ph('<div class="slider"><div class="slides">' . $slides . '</div>' . $nav . '</div>');
 }
 
+/** Mapas de Google y videos de YouTube/Vimeo: único iframe permitido. */
+function embedBlock(DOMElement $c): string
+{
+    $src = $c->getAttribute('data-lazy-src') ?: $c->getAttribute('data-src') ?: $c->getAttribute('src');
+    if (!preg_match('#^(https?:)?//(www\.)?(google\.com/maps|maps\.google\.|youtube(-nocookie)?\.com/embed|player\.vimeo\.com)#i', $src)) {
+        return '';
+    }
+    if (str_starts_with($src, '//')) {
+        $src = 'https:' . $src;
+    }
+    return ph('<div class="embed"><iframe src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>');
+}
+
+function esc(string $s): string
+{
+    return htmlspecialchars(trim(preg_replace('/\s+/u', ' ', $s) ?? $s), ENT_QUOTES, 'UTF-8');
+}
+
+/** Widgets de Elementor con comportamiento propio → bloques simples. Devuelve null si no es uno conocido. */
+function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir): ?string
+{
+    $x = new DOMXPath($c->ownerDocument);
+    $has = static fn (string $cl): string => 'contains(concat(" ",normalize-space(@class)," ")," ' . $cl . ' ")';
+
+    // pestañas anidadas
+    if (str_contains($cls, ' elementor-widget-nested-tabs ')) {
+        $titles = [];
+        foreach ($x->query('.//*[' . $has('e-n-tab-title') . ']', $c) ?: [] as $t) {
+            $titles[] = esc($t->textContent);
+        }
+        $panels = [];
+        foreach ($x->query('.//*[@role="tabpanel"]', $c) ?: [] as $p) {
+            $panels[] = cleanNode($p, $pageUrl, $imgDir);
+        }
+        if (!$titles || !$panels) {
+            return '';
+        }
+        $nav = '';
+        $body = '';
+        foreach ($titles as $i => $t) {
+            $nav .= '<button type="button" class="wtab' . ($i === 0 ? ' on' : '') . '">' . $t . '</button>';
+            $body .= '<div class="wtab-panel' . ($i === 0 ? ' on' : '') . '">' . ($panels[$i] ?? '') . '</div>';
+        }
+        return ph('<div class="wtabs"><div class="wtab-list">' . $nav . '</div>' . $body . '</div>');
+    }
+    // acordeón / preguntas frecuentes
+    if (str_contains($cls, ' elementor-widget-nested-accordion ')) {
+        $out = '';
+        foreach ($x->query('.//details', $c) ?: [] as $d) {
+            $s = $x->query('.//summary', $d);
+            $q = $s && $s->length ? esc($s->item(0)->textContent) : '';
+            $reg = $x->query('.//*[@role="region"]', $d);
+            $a = $reg && $reg->length ? cleanNode($reg->item(0), $pageUrl, $imgDir) : '';
+            if ($q !== '') {
+                $out .= '<details class="acc"><summary>' . $q . '</summary><div class="acc-body">' . $a . '</div></details>';
+            }
+        }
+        return $out === '' ? '' : ph('<div class="acc-list">' . $out . '</div>');
+    }
+    // botón → .btn
+    if (str_contains($cls, ' elementor-widget-button ')) {
+        $a = $x->query('.//a', $c);
+        if (!$a || !$a->length) {
+            return '';
+        }
+        $href = absUrl($a->item(0)->getAttribute('href'), $pageUrl);
+        $label = esc($a->item(0)->textContent);
+        if ($label === '' || $href === '') {
+            return '';
+        }
+        if ((string) parse_url($href, PHP_URL_HOST) === (string) parse_url($pageUrl, PHP_URL_HOST)) {
+            $href = (string) (parse_url($href, PHP_URL_PATH) ?: '/');
+        }
+        return ph('<p class="btn-row"><a class="btn" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . $label . '</a></p>');
+    }
+    // tarjetas con giro (precios de boda)
+    if (str_contains($cls, ' elementor-widget-flip-box ')) {
+        $front = $x->query('.//*[' . $has('elementor-flip-box__front') . ']', $c);
+        $back = $x->query('.//*[' . $has('elementor-flip-box__back') . ']', $c);
+        $f = $front && $front->length ? esc($front->item(0)->textContent) : '';
+        $b = $back && $back->length ? esc($back->item(0)->textContent) : '';
+        return $f . $b === '' ? '' : ph('<div class="pcard"><strong>' . $f . '</strong><span>' . $b . '</span></div>');
+    }
+    // video propio (alojado)
+    if (str_contains($cls, ' elementor-widget-video ')) {
+        $set = json_decode($c->getAttribute('data-settings'), true) ?: [];
+        $url = $set['hosted_url']['url'] ?? ($set['youtube_url'] ?? ($set['vimeo_url'] ?? ''));
+        if ($url === '') {
+            return '';
+        }
+        if (isset($set['hosted_url'])) {
+            $poster = '';
+            if (!empty($set['image_overlay']['url']) && ($ps = saveImage(absUrl($set['image_overlay']['url'], $pageUrl), $imgDir))) {
+                $poster = ' poster="/uploads/' . $ps . '"';
+            }
+            return ph('<video class="vid" controls preload="none"' . $poster . ' src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"></video>');
+        }
+        if (preg_match('#(?:v=|youtu\.be/|embed/)([\w-]{11})#', $url, $m)) {
+            return ph('<div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/' . $m[1] . '" loading="lazy" allowfullscreen></iframe></div>');
+        }
+        return '';
+    }
+    // galería en cuadrícula
+    if (str_contains($cls, ' elementor-widget-gallery ')) {
+        $seen = [];
+        $items = '';
+        foreach ($x->query('.//*[@data-thumbnail or ' . $has('e-gallery-image') . ']', $c) ?: [] as $g) {
+            $u = $g->getAttribute('data-thumbnail') ?: $g->getAttribute('href');
+            $abs = absUrl($u, $pageUrl);
+            $k = preg_replace('/-\d{2,4}x\d{2,4}(\.\w+)$/', '$1', $abs);
+            if ($abs === '' || isset($seen[$k])) {
+                continue;
+            }
+            $seen[$k] = true;
+            if ($s = saveImage($abs, $imgDir)) {
+                $items .= '<img src="/uploads/' . $s . '" alt="" loading="lazy">';
+            }
+        }
+        return $items === '' ? '' : ph('<div class="gallery">' . $items . '</div>');
+    }
+    // slides a todo ancho (fondos con texto)
+    if (str_contains($cls, ' elementor-widget-slides ')) {
+        $slides = '';
+        $seen = [];
+        foreach ($x->query('.//*[' . $has('swiper-slide-bg') . ']', $c) ?: [] as $bg) {
+            if (!preg_match('#url\(["\']?([^)"\']+)#', $bg->getAttribute('style') . ' ' . $bg->getAttribute('data-bg'), $m)) {
+                continue;
+            }
+            $abs = absUrl($m[1], $pageUrl);
+            if (isset($seen[$abs])) {
+                continue;
+            }
+            $seen[$abs] = true;
+            if ($s = saveImage($abs, $imgDir)) {
+                $slides .= '<div class="slide"><img src="/uploads/' . $s . '" alt="" loading="lazy"></div>';
+            }
+        }
+        if ($slides === '') {
+            return '';
+        }
+        $nav = count($seen) > 1 ? '<button class="prev" type="button" aria-label="Anterior">‹</button><button class="next" type="button" aria-label="Siguiente">›</button>' : '';
+        return ph('<div class="slider"><div class="slides">' . $slides . '</div>' . $nav . '</div>');
+    }
+    // widgets sin contenido propio de página (formularios, reseñas, plantillas, JS)
+    foreach (['reviews', 'shortcode', 'html', 'template', 'jet-listing-grid', 'woocommerce-menu-cart', 'pdfjs-viewer', 'social-icons', 'rating', 'spacer', 'divider', 'wpr-flip-carousel', 'loop-carousel', 'theme-post-featured-image'] as $skip) {
+        if (str_contains($cls, " elementor-widget-$skip ") || str_contains($cls, " elementor-widget-$skip.")) {
+            return '';
+        }
+    }
+    return null;
+}
+
 /** Convierte un nodo de WordPress/Elementor en HTML simple y propio (solo etiquetas permitidas). */
 function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
 {
@@ -286,12 +438,20 @@ function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
             continue;
         }
         $tag = strtolower($c->tagName);
+        $cls = ' ' . preg_replace('/\s+/', ' ', $c->getAttribute('class')) . ' ';
+        if ($tag === 'iframe') {
+            $out .= embedBlock($c);
+            continue;
+        }
         if (in_array($tag, DROP, true)) {
             continue;
         }
-        $cls = ' ' . preg_replace('/\s+/', ' ', $c->getAttribute('class')) . ' ';
         if (str_contains($cls, ' elementor-widget-icon-box ')) {
             $out .= iconBox($c, $pageUrl);
+            continue;
+        }
+        if (str_contains($cls, ' elementor-widget-') && ($w = widgetBlock($c, $cls, $pageUrl, $imgDir)) !== null) {
+            $out .= $w;
             continue;
         }
         if (str_contains($cls, ' swiper-wrapper ')) {
