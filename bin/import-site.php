@@ -729,7 +729,15 @@ function homeExtras(DOMXPath $x, DOMNode $main, string $url, string $imgDir): ar
             continue;
         }
         $seen[$text] = 1;
-        $rev[] = ['text' => $text, 'name' => $name];
+        $avatar = '';
+        foreach (q($x, './/img', $it) as $im) {
+            $u = $im->getAttribute('data-lazy-src') ?: $im->getAttribute('data-src') ?: $im->getAttribute('src');
+            if ($u !== '' && strpos($u, 'data:') !== 0 && ($av = saveImage(absUrl($u, $url), 'resenas'))) {
+                $avatar = $av;
+                break;
+            }
+        }
+        $rev[] = ['text' => $text, 'name' => $name, 'avatar' => $avatar];
     }
     $out['reviews'] = $rev;
     foreach (q($x, ".//*[contains(@class,'elementor-heading-title')]", $main) as $h) {
@@ -746,7 +754,13 @@ function homeExtras(DOMXPath $x, DOMNode $main, string $url, string $imgDir): ar
         if (!$fr) {
             continue;
         }
-        $src = $fr[0]->getAttribute('data-lazy-src') ?: $fr[0]->getAttribute('data-src') ?: $fr[0]->getAttribute('src');
+        $src = '';
+        foreach (['data-zt-map-src', 'data-lazy-src', 'data-src', 'src'] as $at) {
+            if ($fr[0]->getAttribute($at) !== '') {
+                $src = $fr[0]->getAttribute($at);
+                break;
+            }
+        }
         if (preg_match('#google\.com/maps|maps\.google#i', $src)) {
             $out['map'] = html_entity_decode($src);
             foreach (q($x, ".//*[contains(@class,'elementor-widget-text-editor')]", $sec) as $te) {

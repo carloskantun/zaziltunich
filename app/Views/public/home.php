@@ -87,25 +87,37 @@ if (!$slides && $heroImg) {
 </section>
 <?php endif; ?>
 
+<?php
+$starSvg = static fn(int $px): string => '<svg class="st" width="' . $px . '" height="' . $px . '" viewBox="0 0 576 512" aria-hidden="true"><path fill="currentColor" d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329 113.2 474.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329 542.7 225.9c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z"/></svg>';
+$stars = static fn(int $px): string => '<span class="stars5" role="img" aria-label="5/5">' . str_repeat($starSvg($px), 5) . '</span>';
+?>
 <?php if (!empty($rev['items'])): ?>
 <section class="home-reviews">
-  <div class="home-w">
-    <div class="rev-head">
-      <div>
-        <div class="rev-t"><?= icon('tripadvisor') ?><span><?= e(t('home.reviews')) ?></span></div>
-        <div class="rev-s"><b><?= e($rev['rating'] ?? '5.0') ?></b><span class="stars">★★★★★</span><?php if (!empty($rev['count'])): ?><small>(<?= e($rev['count']) ?>)</small><?php endif; ?></div>
+  <div class="rv-w">
+    <div class="rv-head">
+      <div class="rv-l">
+        <div class="rv-id"><span class="ta-badge"><?= icon('tripadvisor') ?></span><p><?= e(t('home.reviews')) ?></p></div>
+        <div class="rv-rate"><p class="n"><?= e($rev['rating'] ?? '5.0') ?></p><?= $stars(21) ?><?php if (!empty($rev['count'])): ?><p class="c">(<?= e($rev['count']) ?>)</p><?php endif; ?></div>
       </div>
-      <a class="btn btn-sm" href="<?= e($taUrl) ?>" target="_blank" rel="noopener"><?= e(t('home.write_review')) ?></a>
+      <a class="rv-btn" href="<?= e($taUrl) ?>" target="_blank" rel="noopener"><?= e(t('home.write_review')) ?></a>
     </div>
-    <div class="rev-row">
-      <?php foreach ($rev['items'] as $r): ?>
-      <figure class="rev">
-        <span class="q">“</span>
-        <blockquote><?= e($r['text']) ?></blockquote>
-        <span class="stars">★★★★★</span>
-        <figcaption><span class="av"><?= e(mb_strtoupper(mb_substr($r['name'] ?: 'T', 0, 1))) ?></span><span><b><?= e($r['name']) ?></b><small><?= e(t('home.client')) ?></small></span></figcaption>
-      </figure>
-      <?php endforeach; ?>
+    <div class="rv-slider" data-ms="5000">
+      <div class="rv-view"><div class="rv-track">
+        <?php foreach ($rev['items'] as $r): ?>
+        <div class="rv-slide"><figure class="rev">
+          <div class="rev-body">
+            <svg class="rq" width="25" height="25" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="M0 216C0 149.7 53.7 96 120 96h8c17.7 0 32 14.3 32 32s-14.3 32-32 32h-8c-30.9 0-56 25.1-56 56v8h64c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V216zm256 0c0-66.3 53.7-120 120-120h8c17.7 0 32 14.3 32 32s-14.3 32-32 32h-8c-30.9 0-56 25.1-56 56v8h64c35.3 0 64 28.7 64 64v64c0 35.3-28.7 64-64 64H320c-35.3 0-64-28.7-64-64V216z"/></svg>
+            <blockquote><p><?= e($r['text']) ?></p></blockquote>
+            <?= $stars(16) ?>
+          </div>
+          <figcaption>
+            <span class="av"><?php if (!empty($r['avatar'])): ?><img src="<?= e(raw_url('uploads/' . $r['avatar'])) ?>" alt="" loading="lazy"><?php else: ?><i><?= e(mb_strtoupper(mb_substr($r['name'] ?: 'T', 0, 1))) ?></i><?php endif; ?><span class="ta-badge sm"><?= icon('tripadvisor') ?></span></span>
+            <span class="who"><b><?= e($r['name']) ?></b><small><?= e(t('home.client')) ?></small></span>
+          </figcaption>
+        </figure></div>
+        <?php endforeach; ?>
+      </div></div>
+      <div class="rv-dots" role="tablist"></div>
     </div>
   </div>
 </section>

@@ -528,3 +528,42 @@ a{transition:color var(--d1) var(--ease)}
 .home-loc .loc-grid{grid-template-columns:1fr 1fr;gap:20px}
 .home-loc .loc-grid>div{padding:10px}
 .home-loc .prose h2+p{margin-top:40px}
+
+/* ===== Reseñas Tripadvisor: medidas exactas (carrusel 4 visibles, tarjeta 258×401, radio 20) ===== */
+.home-reviews{background:#1b1b1b;padding:50px 0 60px;color:#fff;overflow:hidden}
+.home-reviews .rv-w{max-width:1140px;margin:0 auto;padding:0 10px}
+.rv-head{display:flex;justify-content:space-between;align-items:flex-start;margin:0 0 20px;height:75px}
+.rv-id{display:flex;align-items:center;gap:20px;height:40px}
+.rv-id p{margin:0;font:600 20px/20px 'Montserrat',sans-serif;color:#fff}
+.ta-badge{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#34e0a1;color:#000;flex:none}
+.ta-badge svg{width:24px;height:24px}
+.ta-badge.sm{width:32px;height:32px;position:absolute;left:33px;top:33px;border:0}
+.ta-badge.sm svg{width:20px;height:20px}
+.rv-rate{display:flex;align-items:center;gap:20px;margin-top:10px;height:25px}
+.rv-rate .n{margin:0;font:600 25px/25px 'Montserrat',sans-serif;color:#fff}
+.rv-rate .c{margin:0;font:400 16px/16px 'Montserrat',sans-serif;color:#fff}
+.stars5{display:inline-flex;color:#f0ad4e}
+.stars5 .st{display:block;flex:none}
+.rv-rate .stars5 .st{margin:0}
+.rv-btn{display:inline-block;margin:10px 10px 0 0;background:#f5b754;color:#181818;text-decoration:none;border-radius:20px;padding:14px 34px;font:500 14px/21px 'Montserrat',sans-serif;transition:background .2s,box-shadow .2s}
+.rv-btn:hover{background:#e6a43c;box-shadow:rgba(0,0,0,.16) 0 8px 22px 0}
+.rv-view{margin:0 -15px;overflow:hidden}
+.rv-track{display:flex;transition:transform .5s ease}
+.rv-track.snap{transition:none}
+.rv-slide{flex:0 0 25%;padding:10px 15px;display:flex}
+.home-reviews .rev{margin:0;width:100%;display:flex;flex-direction:column;background:#fff;color:#181818;border-radius:20px;padding:35px 15px 34px;box-shadow:none;gap:0;font-size:13px}
+.rev-body{flex:1;padding-bottom:19px}
+.rev .rq{display:block;color:#f5b754;margin:0 0 -4px}
+.home-reviews .rev blockquote{margin:0;flex:none}
+.home-reviews .rev blockquote p{margin:0 0 14.4px;font:400 13px/19.5px 'Montserrat',sans-serif;color:#181818}
+.rev figcaption{display:flex;align-items:center;gap:20px;border-top:1px solid #f5b754;padding-top:20px}
+.rev .av{position:relative;display:block!important;width:60px;height:60px;border-radius:0;background:none;flex:none}
+.rev .av>img,.rev .av>i{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;object-fit:cover;background:#d9c9a3;color:#333;font:600 22px/1 'Montserrat',sans-serif;font-style:normal}
+.rev .who{display:flex;flex-direction:column;gap:10px}
+.rev .who b{font:500 14px/14px 'Montserrat',sans-serif;color:#181818}
+.rev .who small{font:400 12px/12px 'Montserrat',sans-serif;color:#181818}
+.rv-dots{display:flex;justify-content:center;margin-top:10px;height:21px}
+.rv-dots button{width:15px;height:15px;margin:3px 5px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.18);cursor:pointer;transition:background .3s}
+.rv-dots button.on{background:#f5b754}
+@media(max-width:1100px){.rv-slide{flex-basis:50%}}
+@media(max-width:640px){.rv-slide{flex-basis:100%}.rv-head{flex-direction:column;height:auto;gap:16px}.rv-btn{margin:0}}

@@ -100,3 +100,42 @@ document.querySelectorAll('.hero-slides').forEach(function (box) {
     show();
   }
 })();
+
+
+/* Carrusel de reseñas: bucle infinito, 4/2/1 visibles, avance cada 5 s, puntos */
+(function () {
+  var box = document.querySelector('.rv-slider');
+  if (!box) return;
+  var track = box.querySelector('.rv-track'), dotsBox = box.querySelector('.rv-dots');
+  var slides = [].slice.call(track.children), n = slides.length;
+  if (!n) return;
+  var ms = parseInt(box.getAttribute('data-ms') || '5000', 10), i = 0, vis = 4, timer = null, paused = false;
+  function perView() { var w = window.innerWidth; return w <= 640 ? 1 : (w <= 1100 ? 2 : 4); }
+  slides.forEach(function (_, k) {
+    var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', String(k + 1));
+    b.addEventListener('click', function () { go(k); restart(); });
+    dotsBox.appendChild(b);
+  });
+  function build() {
+    [].slice.call(track.querySelectorAll('.clone')).forEach(function (c) { c.remove(); });
+    vis = perView();
+    for (var k = 0; k < Math.min(vis, n); k++) { var c = slides[k].cloneNode(true); c.className += ' clone'; c.setAttribute('aria-hidden', 'true'); track.appendChild(c); }
+    set(i, false);
+  }
+  function set(idx, anim) {
+    track.classList.toggle('snap', !anim);
+    track.style.transform = 'translateX(' + (-idx * 100 / vis) + '%)';
+    var act = ((idx % n) + n) % n;
+    [].forEach.call(dotsBox.children, function (d, k) { d.classList.toggle('on', k === act); });
+  }
+  function go(idx) { i = idx; set(i, true); }
+  function next() {
+    i += 1; set(i, true);
+    if (i >= n) { setTimeout(function () { i = 0; set(0, false); }, 520); }
+  }
+  function restart() { clearInterval(timer); if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(function () { if (!paused) next(); }, ms); }
+  box.addEventListener('mouseenter', function () { paused = true; });
+  box.addEventListener('mouseleave', function () { paused = false; });
+  window.addEventListener('resize', build);
+  build(); restart();
+})();
