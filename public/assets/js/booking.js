@@ -137,3 +137,15 @@
   if (fPax) filterOptions();
   loadMonth();
 })();
+
+/* Galería de la ficha: miniaturas cambian la imagen principal. */
+(function () {
+  var main = document.getElementById('gal-img');
+  if (!main) return;
+  document.querySelectorAll('.gal-thumbs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      main.src = b.dataset.src;
+      document.querySelectorAll('.gal-thumbs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+    });
+  });
+})();

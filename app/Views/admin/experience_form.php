@@ -62,6 +62,10 @@ $money = static fn ($c) => $c === null || $c === '' ? '' : from_cents((int) $c);
   </div>
   <label class="fld"><span>Imagen principal</span><input type="file" name="hero" accept="image/jpeg,image/png,image/webp"></label>
   <?php if ($v['hero_image']): ?><img class="thumb" src="<?= e(raw_url('uploads/' . $v['hero_image'])) ?>" alt=""><?php endif; ?>
+  <label class="fld"><span>Galería (puedes elegir varias)</span><input type="file" name="gallery[]" multiple accept="image/jpeg,image/png,image/webp"></label>
+  <?php foreach ((array) json_decode((string) ($v['gallery'] ?? ''), true) as $g): ?>
+    <label class="chk" style="display:inline-block;margin:4px 10px 4px 0"><img class="thumb" src="<?= e(raw_url('uploads/' . $g)) ?>" alt="" style="max-height:70px"><br><input type="checkbox" name="gallery_remove[]" value="<?= e($g) ?>"> Quitar</label>
+  <?php endforeach; ?>
 </section>
 
 <?php foreach (['es' => 'Español', 'en' => 'English'] as $l => $lname): ?>

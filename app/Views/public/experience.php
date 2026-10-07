@@ -11,11 +11,23 @@ if ($T('bring')) { $tabs['bring'] = ['exp.tab.bring', 'list', lines($T('bring'))
 if ($T('itinerary')) { $tabs['itinerary'] = ['exp.tab.itinerary', 'list', lines($T('itinerary'))]; }
 if ($T('faq')) { $tabs['faq'] = ['exp.tab.faq', 'faq', $T('faq')]; }
 ?>
-<section class="exp-hero"<?= $img ? ' style="background-image:url(' . e($img) . ')"' : '' ?>>
-  <div class="exp-hero-inner"><h1><?= e($T('title')) ?></h1><?php if ($T('subtitle')): ?><p><?= e($T('subtitle')) ?></p><?php endif; ?></div>
-</section>
-<section class="section exp-layout">
+<?php
+$barTitle = $T('title');
+$barImage = null; // usa la imagen general del sitio
+include __DIR__ . '/_titlebar.php';
+$gallery = array_values(array_filter(array_merge($exp['hero_image'] ? [$exp['hero_image']] : [], (array) json_decode((string) $exp['gallery'], true))));
+$gallery = array_values(array_unique($gallery));
+?>
+<section class="band light exp-band"><div class="wrap exp-layout">
   <div class="exp-info">
+    <?php if ($gallery): ?>
+    <div class="gal" id="gal">
+      <div class="gal-main"><img id="gal-img" src="<?= e(raw_url('uploads/' . $gallery[0])) ?>" alt="<?= e($T('title')) ?>"></div>
+      <?php if (count($gallery) > 1): ?><div class="gal-thumbs"><?php foreach ($gallery as $i => $g): ?><button type="button" class="<?= $i === 0 ? 'on' : '' ?>" data-src="<?= e(raw_url('uploads/' . $g)) ?>"><img src="<?= e(raw_url('uploads/' . $g)) ?>" alt="" loading="lazy"></button><?php endforeach; ?></div><?php endif; ?>
+    </div>
+    <?php endif; ?>
+    <p class="from"><?= e(t('card.from')) ?> <?= e(money(Catalog::fromPrice($exp), $exp['currency'])) ?></p>
+    <?php if ($T('highlights')): ?><ul class="highlights"><?php foreach (array_slice(lines($T('highlights')), 0, 4) as $h): ?><li><i></i><span><?= e($h) ?></span></li><?php endforeach; ?></ul><?php endif; ?>
     <?php if ($tabs): ?>
     <div class="tabs" role="tablist">
       <?php $first = true; foreach ($tabs as $key => $tab): ?>
@@ -46,7 +58,7 @@ if ($T('faq')) { $tabs['faq'] = ['exp.tab.faq', 'faq', $T('faq')]; }
     <?php $formAction = url('/checkout'); $adminMode = false; include __DIR__ . '/_widget.php'; ?>
     <?php endif; ?>
   </aside>
-</section>
+</div></section>
 <?php if ($contact && $exp['show_contact'] && $exp['kind'] !== 'quote'): ?>
-<section class="section contact-band"><h3><?= e(t('contact.title')) ?></h3><div class="contact-row"><?php foreach ($contact as $c): ?><a class="btn btn-ghost" href="<?= e($c['href']) ?>"><?= e($c['label']) ?></a><?php endforeach; ?></div></section>
+<section class="band light contact-band"><h3><?= e(t('contact.title')) ?></h3><div class="contact-row"><?php foreach ($contact as $c): ?><a class="btn btn-ghost" href="<?= e($c['href']) ?>"><?= e($c['label']) ?></a><?php endforeach; ?></div></section>
 <?php endif; ?>

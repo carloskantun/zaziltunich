@@ -83,6 +83,19 @@ final class ExperiencesController extends Base
         if ($hero) {
             $data['hero_image'] = $hero;
         }
+        // Galería: conserva las existentes (menos las marcadas para quitar) y agrega las nuevas.
+        $gal = $id ? (array) json_decode((string) DB::value('SELECT gallery FROM experiences WHERE id = ?', [$id]), true) : [];
+        $gal = array_values(array_diff($gal, (array) ($_POST['gallery_remove'] ?? [])));
+        $up = $_FILES['gallery'] ?? null;
+        if ($up && is_array($up['name'] ?? null)) {
+            foreach (array_keys($up['name']) as $k) {
+                $one = Images::store(['name' => $up['name'][$k], 'type' => $up['type'][$k], 'tmp_name' => $up['tmp_name'][$k], 'error' => $up['error'][$k], 'size' => $up['size'][$k]]);
+                if ($one) {
+                    $gal[] = $one;
+                }
+            }
+        }
+        $data['gallery'] = $gal ? json_encode(array_values($gal)) : null;
         $savedId = DB::tx(function () use ($id, $data, $now) {
             if ($id) {
                 DB::update('experiences', $data, 'id = ?', [$id]);

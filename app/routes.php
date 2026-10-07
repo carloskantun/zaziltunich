@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use App\Controllers\Admin;
-use App\Controllers\{ApiController, PublicController};
+use App\Controllers\{ApiController, ContentController, PublicController};
 use App\Core\Router;
 
 return static function (Router $r): void {
@@ -14,6 +14,9 @@ return static function (Router $r): void {
     $r->get('/pago/{code}', [PublicController::class, 'pay']);
     $r->get('/gracias/{code}', [PublicController::class, 'thanks']);
     $r->get('/voucher/{code}', [PublicController::class, 'voucher']);
+
+    $r->get('/blog', [ContentController::class, 'blog']);
+    $r->get('/blog/{slug}', [ContentController::class, 'post']);
 
     $r->get('/api/month', [ApiController::class, 'month']);
     $r->get('/api/slots', [ApiController::class, 'slots']);
@@ -48,8 +51,22 @@ return static function (Router $r): void {
     $r->get('/admin/bloqueos', [Admin\ResourcesController::class, 'blocks']);
     $r->post('/admin/bloqueos', [Admin\ResourcesController::class, 'saveBlocks']);
 
+    $r->get('/admin/paginas', [Admin\ContentAdminController::class, 'pages']);
+    $r->get('/admin/paginas/nueva', [Admin\ContentAdminController::class, 'pageNew']);
+    $r->post('/admin/paginas/guardar', [Admin\ContentAdminController::class, 'pageSave']);
+    $r->get('/admin/paginas/{id}', [Admin\ContentAdminController::class, 'pageForm']);
+    $r->post('/admin/paginas/{id}/eliminar', [Admin\ContentAdminController::class, 'pageDelete']);
+    $r->get('/admin/blog', [Admin\ContentAdminController::class, 'posts']);
+    $r->get('/admin/blog/nueva', [Admin\ContentAdminController::class, 'postNew']);
+    $r->post('/admin/blog/guardar', [Admin\ContentAdminController::class, 'postSave']);
+    $r->get('/admin/blog/{id}', [Admin\ContentAdminController::class, 'postEdit']);
+    $r->post('/admin/blog/{id}/eliminar', [Admin\ContentAdminController::class, 'postDelete']);
+
     $r->get('/admin/clientes', [Admin\CustomersController::class, 'index']);
     $r->get('/admin/ajustes', [Admin\SettingsController::class, 'index']);
     $r->post('/admin/ajustes', [Admin\SettingsController::class, 'save']);
     $r->post('/admin/usuarios', [Admin\SettingsController::class, 'saveUser']);
+
+    // Páginas de contenido (/mapa-del-recorrido, /romance, …): debe ir al final.
+    $r->get('/{slug}', [ContentController::class, 'page']);
 };

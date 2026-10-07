@@ -27,6 +27,7 @@ final class Installer
                 return 'La base de datos ya contiene tablas del sistema.';
             }
             DB::runSchema((string) file_get_contents(ROOT . '/database/schema.sql'));
+            DB::runSchema((string) file_get_contents(ROOT . '/database/002_content.sql'));
             Config::set(['base_url' => rtrim($baseUrl, '/'), 'timezone' => 'America/Merida', 'db' => $db]);
             Seeder::settings();
             Seeder::admin($adminName, $adminEmail, $adminPass);

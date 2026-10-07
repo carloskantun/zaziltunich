@@ -9,7 +9,7 @@ $img = $e['hero_image'] ? raw_url('uploads/' . $e['hero_image']) : null;
   </a>
   <div class="card-body">
     <h3><a href="<?= e(url('/reservaciones/' . $e['slug'])) ?>"><?= e($title) ?></a></h3>
-    <p class="price"><?= e(t('card.from')) ?> <strong><?= e(money(Catalog::fromPrice($e), $e['currency'])) ?></strong> <small><?= e(Catalog::priceSuffix($e)) ?></small></p>
-    <a class="btn" href="<?= e(url('/reservaciones/' . $e['slug'])) ?>"><?= e(t('card.book')) ?></a>
+    <p class="price"><?= e(t('card.from')) ?> <strong><?= e(money(Catalog::fromPrice($e), $e['currency'])) ?></strong></p>
+    <a class="btn btn-sm" href="<?= e(url('/reservaciones/' . $e['slug'])) ?>"><?= e(t('card.book')) ?></a>
   </div>
 </article>

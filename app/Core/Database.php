@@ -143,6 +143,7 @@ final class Database
         } else {
             $sql = str_replace(['{{PK}}', '{{ENGINE}}'], ['INTEGER PRIMARY KEY AUTOINCREMENT', ''], $sql);
         }
+        $sql = str_replace("\r\n", "\n", $sql);
         foreach (array_filter(array_map('trim', explode(";\n", $sql))) as $statement) {
             // Quita comentarios de línea completa antes de ejecutar.
             $statement = trim(preg_replace('/^\s*--.*$/m', '', $statement) ?? '');

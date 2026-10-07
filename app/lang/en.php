@@ -1,9 +1,13 @@
 <?php
 return [
+    'home.hero_sub' => 'National Tourism Innovation Award',
+    'nav.blog' => 'Blog',
+    'blog.read' => 'Read more',
+    'nav.menu' => 'Menu',
     'nav.experiences' => 'Book',
     'nav.contact' => 'Contact',
     'nav.lang_switch' => 'ES',
-    'home.hero_title' => 'A living museum of art and nature',
+    'home.hero_title' => 'The only Cenote Museum in Mexico',
     'home.hero_cta' => 'Book now',
     'home.experiences' => 'Our experiences',
     'home.tagline' => 'Redefining luxury: "nature, culture and exclusivity".',

@@ -34,6 +34,7 @@ if (getenv('ZT_MYSQL_DB')) {
     DB::connect(['driver' => 'sqlite', 'path' => ':memory:']);
 }
 DB::runSchema((string) file_get_contents(ROOT . '/database/schema.sql'));
+DB::runSchema((string) file_get_contents(ROOT . '/database/002_content.sql'));
 Seeder::settings();
 Seeder::catalog();
 

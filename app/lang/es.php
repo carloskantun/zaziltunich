@@ -1,9 +1,13 @@
 <?php
 return [
+    'home.hero_sub' => 'Premio Nacional a la innovación turística',
+    'nav.blog' => 'Blog',
+    'blog.read' => 'Leer más',
+    'nav.menu' => 'Menú',
     'nav.experiences' => 'Reservaciones',
     'nav.contact' => 'Contacto',
     'nav.lang_switch' => 'EN',
-    'home.hero_title' => 'Cenote Museo de arte vivo y natural',
+    'home.hero_title' => 'Único Cenote Museo de México',
     'home.hero_cta' => 'Reservar',
     'home.experiences' => 'Nuestras experiencias',
     'home.tagline' => 'Redefiniendo los estándares del lujo: "naturaleza, cultura y exclusividad".',

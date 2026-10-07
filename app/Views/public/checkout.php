@@ -1,6 +1,6 @@
+<?php $barTitle = t('checkout.title'); include __DIR__ . '/_titlebar.php'; ?>
 <?php use App\Domain\{Catalog, Selection}; ?>
 <section class="section narrow">
-  <h1><?= e(t('checkout.title')) ?></h1>
   <div class="summary">
     <h3><?= e(Catalog::text($exp, 'title')) ?></h3>
     <p><?= e(date_label($sel['date'])) ?><?= $sel['time'] ? ' · ' . e($sel['time']) : '' ?><?= $sel['end_date'] ? ' → ' . e(date_label($sel['end_date'])) : '' ?> · <?= (int) $sel['pax'] ?> <?= e(t('book.people')) ?></p>

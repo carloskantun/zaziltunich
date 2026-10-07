@@ -1,3 +1,9 @@
+body.admin,body.login{--c-primary:#181818;--c-primary-dark:#101010;--c-accent:#F5B754;font-size:15px}
+body.admin a{color:#8a5a00}
+.side .brand{max-width:none;letter-spacing:3px;font-size:16px}
+.side nav a.on{background:#F5B754;color:#181818}
+.chip.on{background:#181818;border-color:#181818}
+.btn-ghost{color:#181818;border-color:#181818}
 body.admin{display:grid;grid-template-columns:220px 1fr;min-height:100vh;background:#f4f2ed;font-size:15px}
 .side{background:var(--c-primary-dark);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh}
 .side .brand{color:#fff;font-size:18px}
