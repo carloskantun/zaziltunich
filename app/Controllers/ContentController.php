@@ -8,18 +8,34 @@ use App\Domain\Content;
 
 final class ContentController
 {
-    public function blog(): void
+    private const PER = 12;
+
+    private function archive(string $heading, array $filter, string $base): void
     {
-        $per = 12;
-        $pages = max(1, (int) ceil(Content::postCount() / $per));
+        $pages = max(1, (int) ceil(Content::postCount($filter) / self::PER));
         $cur = min($pages, max(1, (int) ($_GET['p'] ?? 1)));
-        View::render('public/blog', ['title' => t('nav.blog'), 'posts' => Content::posts($per, ($cur - 1) * $per), 'page' => $cur, 'pages' => $pages, 'bodyClass' => 'light']);
+        View::render('public/blog', [
+            'title' => $heading, 'heading' => $heading, 'posts' => Content::posts(self::PER, ($cur - 1) * self::PER, $filter),
+            'page' => $cur, 'pages' => $pages, 'pagerBase' => $base, 'query' => $filter['q'] ?? '', 'bodyClass' => 'light',
+        ]);
     }
 
+    public function blog(): void
+    {
+        $q = trim((string) ($_GET['s'] ?? ''));
+        $this->archive(t('nav.blog'), $q !== '' ? ['q' => $q] : [], url('/blog') . ($q !== '' ? '?s=' . rawurlencode($q) : ''));
+    }
+
+    /** /blog/{slug}: una entrada o, si no existe, una categoría. */
     public function post(array $p): void
     {
         $post = Content::post($p['slug']);
         if (!$post) {
+            $cat = Content::category($p['slug']);
+            if ($cat) {
+                $this->archive($cat['name'], ['category' => (int) $cat['id']], url('/blog/' . $cat['slug']));
+                return;
+            }
             View::notFound();
         }
         View::render('public/post', [

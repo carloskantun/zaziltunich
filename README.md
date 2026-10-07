@@ -25,3 +25,6 @@ Instalación por consola (desarrollo): `php bin/install.php --driver=sqlite --pa
 - Pendiente: correos automáticos de confirmación, constructor de páginas/blog, importador desde WordPress, redirecciones SEO, SMS automático, cupones.
 - Los tokens de diseño (colores, radios) están en `public/assets/css/app.css` (`:root`) y son una primera aproximación: hay que calibrarlos contra el sitio actual.
 - Datos por confirmar con el cliente: número de cabañas y horarios de entrada/salida, variantes y precio del evento del 14 de feb 2027 (queda en borrador), y si el anticipo incluye extras (hoy sí).
+
+## Créditos de íconos
+Los íconos de `public/assets/icons/` son de Font Awesome Free (CC BY 4.0, ver `LICENSE-fontawesome.txt`) y el de TripAdvisor es de Simple Icons (CC0).

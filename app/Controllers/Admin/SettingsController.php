@@ -8,7 +8,7 @@ use App\Domain\Settings;
 
 final class SettingsController extends Base
 {
-    private const KEYS = ['site_name', 'contact_whatsapp', 'contact_phone', 'contact_email', 'contact_sms', 'hold_minutes', 'payment_instructions_es', 'payment_instructions_en'];
+    private const KEYS = ['site_name', 'contact_whatsapp', 'contact_phone', 'contact_email', 'contact_sms', 'hold_minutes', 'payment_instructions_es', 'payment_instructions_en', 'site_phone_label', 'site_address', 'social_facebook', 'social_instagram', 'social_x', 'social_tripadvisor'];
 
     public function index(): void
     {

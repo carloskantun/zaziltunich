@@ -36,16 +36,33 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
   <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="<?= e(t('nav.menu')) ?>"><label for="nav-toggle" class="burger"><i></i><i></i><i></i></label>
   <nav>
     <?php foreach ($nav as $n): ?><a href="<?= e($n['href']) ?>"<?= $n['on'] ? ' class="on"' : '' ?>><?= e($n['label']) ?></a><?php endforeach; ?>
-    <a class="lang" href="<?= e(url($path, $other)) ?>"><?= e(t('nav.lang_switch')) ?></a>
+    <a class="lang" href="<?= e(url($path, $other)) ?>"><?php if ($flag = site_file('flags/' . $other . '.png')): ?><img src="<?= e($flag) ?>" alt="" width="20" height="15"><?php endif; ?><?= e(t('nav.lang_switch')) ?></a>
   </nav>
 </header>
 <main><?= $content ?></main>
+<?php $si = site_info(); $badge = site_file('badge-tripadvisor.png'); $taUrl = $si['social']['tripadvisor'] ?? '#'; ?>
 <footer class="site-footer">
-  <div class="foot-inner">
-    <div><strong><?= e(strtoupper($site)) ?></strong><p><?= e(t('home.tagline')) ?></p></div>
-    <div class="foot-links"><?php foreach ($nav as $n): ?><a href="<?= e($n['href']) ?>"><?= e($n['label']) ?></a><?php endforeach; ?></div>
+  <div class="foot-grid">
+    <div class="foot-brand">
+      <?php if ($logo): ?><img class="foot-logo" src="<?= e($logo) ?>" alt="<?= e($site) ?>"><?php else: ?><strong><?= e(strtoupper($site)) ?></strong><?php endif; ?>
+      <p><?= e(t('footer.tagline')) ?></p>
+      <div class="social"><?php foreach ($si['social'] as $ic => $href): ?><a href="<?= e($href) ?>" target="_blank" rel="noopener" aria-label="<?= e($ic) ?>"><?= icon($ic) ?></a><?php endforeach; ?></div>
+    </div>
+    <div class="foot-contact">
+      <h4><?= e(t('footer.contact')) ?></h4>
+      <ul>
+        <li><?= icon('envelope') ?><a href="mailto:<?= e($si['email']) ?>"><?= e($si['email']) ?></a></li>
+        <li><?= icon('whatsapp') ?><a href="<?= e($si['wa']) ?>" target="_blank" rel="noopener"><?= e($si['phone']) ?></a></li>
+        <li><?= icon('location-dot') ?><span><?= e($si['address']) ?></span></li>
+      </ul>
+      <p class="legal"><a href="<?= e(url('/terminos-y-condiciones')) ?>"><?= e(t('footer.terms')) ?></a><a href="<?= e(url('/politica-de-privacidad')) ?>"><?= e(t('footer.privacy')) ?></a></p>
+    </div>
+    <div class="foot-ta">
+      <p><?= e(t('footer.recommended')) ?></p>
+      <?php if ($badge): ?><a href="<?= e($taUrl) ?>" target="_blank" rel="noopener"><img src="<?= e($badge) ?>" alt="TripAdvisor" loading="lazy"></a><?php endif; ?>
+    </div>
   </div>
-  <p class="copy">© <?= date('Y') ?> <?= e($site) ?>. <?= e(t('footer.rights')) ?></p>
+  <p class="copy"><?= e(t('footer.copy')) ?> <?= date('Y') ?> <?= e($site) ?></p>
 </footer>
 <?php if ($floating): ?>
 <div class="float-contact">
@@ -54,6 +71,7 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
   <?php endforeach; ?>
 </div>
 <?php endif; ?>
+<script src="<?= e(asset('js/site.js')) ?>" defer></script>
 <?= $scripts ?? '' ?>
 </body>
 </html>

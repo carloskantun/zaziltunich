@@ -28,7 +28,7 @@ if (!Config::installed()) {
     fwrite(STDERR, "Primero instala el sistema (php -S ... y abre /install).\n");
     exit(1);
 }
-if (!tableExists('pages')) {
+if (!tableExists('pages') || !tableExists('categories')) {
     fwrite(STDERR, "Faltan las tablas nuevas. Ejecuta antes: php bin/migrate.php\n");
     exit(1);
 }
@@ -51,6 +51,7 @@ $ONLY = array_map('trim', explode(',', $opts['only']));
 $UP = ROOT . '/public/uploads/site';
 @mkdir($UP, 0775, true);
 $now = date('Y-m-d H:i:s');
+$PH = [];
 $stats = ['img' => 0, 'img_fail' => 0, 'products' => 0, 'posts' => 0, 'pages' => 0];
 
 function tableExists(string $t): bool
@@ -164,7 +165,7 @@ function saveImage(string $url, string $dir = '', bool $keepPng = false): ?strin
     @mkdir($folder, 0775, true);
     $rel = 'site/' . ($sub !== '' ? $sub . '/' : '');
     // ya descargada en una corrida anterior
-    foreach (['webp', 'jpg', 'png', 'gif'] as $e) {
+    foreach (['webp', 'jpg', 'png', 'gif', 'svg'] as $e) {
         if (is_file($folder . '/' . $name . '.' . $e)) {
             return $done[$key] = $rel . $name . '.' . $e;
         }
@@ -174,6 +175,11 @@ function saveImage(string $url, string $dir = '', bool $keepPng = false): ?strin
         $stats['img_fail']++;
         say("   ! no se pudo bajar: $url");
         return $done[$key] = null;
+    }
+    if (preg_match('/\.svg(\?.*)?$/i', $full) || str_starts_with(ltrim(substr($bin, 0, 200)), '<svg') || str_contains(substr($bin, 0, 200), '<svg')) {
+        file_put_contents($folder . '/' . $name . '.svg', $bin);
+        $stats['img']++;
+        return $done[$key] = $rel . $name . '.svg';
     }
     $info = @getimagesizefromstring($bin);
     if ($info && function_exists('imagewebp') && !$keepPng && in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
@@ -202,6 +208,71 @@ const KEEP = ['p' => [], 'h2' => [], 'h3' => [], 'h4' => [], 'ul' => [], 'ol' =>
     'br' => [], 'blockquote' => [], 'a' => ['href'], 'img' => ['src', 'alt']];
 const DROP = ['script', 'style', 'noscript', 'form', 'iframe', 'nav', 'header', 'footer', 'svg', 'button', 'input', 'select', 'textarea', 'link', 'meta'];
 
+/** Bloques con HTML propio (deslizadores, íconos) que viajan como marcadores hasta el final. */
+function ph(string $html): string
+{
+    global $PH;
+    $PH[] = $html;
+    return '<!--PH' . (count($PH) - 1) . '-->';
+}
+
+/** Ícono + título de un widget "icon-box" de Elementor → <div class="ibox"> con el SVG guardado como archivo. */
+function iconBox(DOMElement $c, string $pageUrl): string
+{
+    global $UP;
+    $x = new DOMXPath($c->ownerDocument);
+    $title = $x->query('.//*[contains(@class,"elementor-icon-box-title")]', $c);
+    $label = $title && $title->length ? trim(preg_replace('/\s+/u', ' ', $title->item(0)->textContent)) : '';
+    $src = '';
+    $svg = $x->query('.//*[contains(@class,"elementor-icon-box-icon")]//svg', $c);
+    if ($svg && $svg->length) {
+        $xml = $c->ownerDocument->saveXML($svg->item(0));
+        $xml = preg_replace('/\s+xmlns(:\w+)?="[^"]*"/', '', (string) $xml);
+        $xml = preg_replace('/^<svg/', '<svg xmlns="http://www.w3.org/2000/svg"', (string) $xml);
+        $xml = str_ireplace(['viewbox=', 'preserveaspectratio='], ['viewBox=', 'preserveAspectRatio='], $xml);
+        $xml = preg_replace('/\s(width|height)="[^"]*"/', '', $xml, 2) ?? $xml;
+        @mkdir($UP . '/icons', 0775, true);
+        $name = substr(sha1($xml), 0, 12) . '.svg';
+        file_put_contents($UP . '/icons/' . $name, $xml);
+        $src = '/uploads/site/icons/' . $name;
+    } else {
+        $img = $x->query('.//*[contains(@class,"elementor-icon-box-icon")]//img', $c);
+        if ($img && $img->length) {
+            $saved = saveImage(absUrl($img->item(0)->getAttribute('src'), $pageUrl), 'icons');
+            $src = $saved ? '/uploads/' . $saved : '';
+        }
+    }
+    if ($label === '' && $src === '') {
+        return '';
+    }
+    return ph('<div class="ibox">' . ($src ? '<img src="' . $src . '" alt="">' : '') . '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></div>');
+}
+
+/** Carrusel (swiper) → <div class="slider"> con cada foto una sola vez. */
+function sliderBlock(DOMElement $c, string $pageUrl, string $imgDir): string
+{
+    $x = new DOMXPath($c->ownerDocument);
+    $seen = [];
+    $slides = '';
+    foreach ($x->query('.//img', $c) ?: [] as $img) {
+        $src = $img->getAttribute('data-lazy-src') ?: $img->getAttribute('data-src') ?: $img->getAttribute('src');
+        $abs = absUrl($src, $pageUrl);
+        $k = preg_replace('/-\d{2,4}x\d{2,4}(\.\w+)$/', '$1', $abs);
+        if ($abs === '' || isset($seen[$k])) {
+            continue;
+        }
+        $seen[$k] = true;
+        if ($saved = saveImage($abs, $imgDir)) {
+            $slides .= '<div class="slide"><img src="/uploads/' . $saved . '" alt="' . htmlspecialchars($img->getAttribute('alt'), ENT_QUOTES, 'UTF-8') . '" loading="lazy"></div>';
+        }
+    }
+    if ($slides === '') {
+        return '';
+    }
+    $nav = count($seen) > 1 ? '<button class="prev" type="button" aria-label="Anterior">‹</button><button class="next" type="button" aria-label="Siguiente">›</button>' : '';
+    return ph('<div class="slider"><div class="slides">' . $slides . '</div>' . $nav . '</div>');
+}
+
 /** Convierte un nodo de WordPress/Elementor en HTML simple y propio (solo etiquetas permitidas). */
 function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
 {
@@ -216,6 +287,15 @@ function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
         }
         $tag = strtolower($c->tagName);
         if (in_array($tag, DROP, true)) {
+            continue;
+        }
+        $cls = ' ' . preg_replace('/\s+/', ' ', $c->getAttribute('class')) . ' ';
+        if (str_contains($cls, ' elementor-widget-icon-box ')) {
+            $out .= iconBox($c, $pageUrl);
+            continue;
+        }
+        if (str_contains($cls, ' swiper-wrapper ')) {
+            $out .= sliderBlock($c, $pageUrl, $imgDir);
             continue;
         }
         if ($tag === 'h1') {
@@ -266,16 +346,45 @@ function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
     return $out;
 }
 
+/** Sustituye marcadores por su HTML, agrupa íconos en una fila y, en páginas, arma el bloque "medio + texto". */
+function assemble(string $html, bool $split): string
+{
+    global $PH;
+    $isIcon = static fn (int $i) => str_starts_with((string) ($PH[$i] ?? ''), '<div class="ibox">');
+    // grupos de íconos consecutivos → fila
+    $html = preg_replace_callback('/(?:<!--PH(\d+)-->\s*)+/', static function ($m) use ($PH, $isIcon) {
+        preg_match_all('/<!--PH(\d+)-->/', $m[0], $ids);
+        $out = '';
+        $row = '';
+        foreach ($ids[1] as $i) {
+            if ($isIcon((int) $i)) {
+                $row .= $PH[(int) $i];
+                continue;
+            }
+            if ($row !== '') {
+                $out .= '<div class="ibox-row">' . $row . '</div>';
+                $row = '';
+            }
+            $out .= $PH[(int) $i];
+        }
+        return $out . ($row !== '' ? '<div class="ibox-row">' . $row . '</div>' : '') . "\n";
+    }, $html) ?? $html;
+    if ($split && preg_match('#^(<h2>.*?</h2>)\s*(<div class="slider">.*?</div></div>(?:<button.*?</button>)*</div>|<p><img[^>]*></p>)\s*(.+)$#s', $html, $m) && trim($m[3]) !== '') {
+        $html = $m[1] . '<div class="split"><div class="split-media">' . $m[2] . '</div><div class="split-body">' . $m[3] . '</div></div>';
+    }
+    return trim($html);
+}
+
 /** Quita saltos de bloque repetidos y texto suelto sin <p>. */
 function tidy(string $html): string
 {
     $html = preg_replace('/(<br>\s*){3,}/', '<br><br>', $html) ?? $html;
     $html = preg_replace('/<p>\s*(<br>)?\s*<\/p>/', '', $html) ?? $html;
     // Elementor deja a menudo texto suelto entre bloques: envolver en <p>.
-    $parts = preg_split('/(<(?:p|h[2-4]|ul|ol|blockquote)\b.*?<\/(?:p|h[2-4]|ul|ol|blockquote)>)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [$html];
+    $parts = preg_split('/(<(?:p|h[2-4]|ul|ol|blockquote)\b.*?<\/(?:p|h[2-4]|ul|ol|blockquote)>|<!--PH\d+-->)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [$html];
     $out = '';
     foreach ($parts as $p) {
-        if (preg_match('/^<(p|h[2-4]|ul|ol|blockquote)\b/i', $p)) {
+        if (preg_match('/^<(p|h[2-4]|ul|ol|blockquote)\b|^<!--PH/i', $p)) {
             $out .= $p . "\n";
         } elseif (trim(strip_tags($p, '<img>')) !== '') {
             $out .= '<p>' . trim($p) . "</p>\n";
@@ -439,6 +548,108 @@ if (in_array('site', $ONLY, true)) {
         }
     } else {
         say('   ! no encontré el logo (usa --logo=URL)');
+    }
+}
+
+
+// ---- Logos, insignia, bandera, banner de guía e Instagram (cabecera, pie y barra lateral del blog)
+if (in_array('site', $ONLY, true)) {
+    say('== Elementos del diseño (pie, barra lateral, banderas)');
+    $grab = static function (?string $url, string $dest) use ($UP): bool {
+        if (!$url) {
+            return false;
+        }
+        $bin = http($url);
+        if (!$bin) {
+            say('   ! no se pudo bajar ' . $url);
+            return false;
+        }
+        @mkdir(dirname($UP . '/' . $dest), 0775, true);
+        file_put_contents($UP . '/' . $dest, $bin);
+        say('   ' . $dest . ' ← ' . basename((string) parse_url($url, PHP_URL_PATH)));
+        return true;
+    };
+    $imgSrc = static fn (DOMElement $i, string $base) => absUrl($i->getAttribute('data-lazy-src') ?: $i->getAttribute('data-src') ?: $i->getAttribute('src'), $base);
+    $blogHtml = http($BASE . '/blog/');
+    $bx = $blogHtml ? dom($blogHtml) : null;
+    if ($bx) {
+        // pie: el primer logo y la insignia de TripAdvisor
+        $fimgs = array_values(array_filter(array_map(static fn ($i) => $imgSrc($i, $BASE . '/blog/'), q($bx, '//*[@data-elementor-type="footer"]//img')), static fn ($u) => $u !== '' && str_contains($u, '/uploads/')));
+        if ($fimgs) {
+            $badge = null;
+            foreach ($fimgs as $u) {
+                if (preg_match('/trip|travel|choice|award|tc/i', basename($u))) {
+                    $badge = $u;
+                }
+            }
+            $badge = $badge ?? (count($fimgs) > 1 ? end($fimgs) : null);
+            if ($badge) {
+                $grab($badge, 'badge-tripadvisor.png');
+            }
+            if (!is_file($UP . '/logo.png')) {
+                $grab($fimgs[0], 'logo.png');
+            }
+        } else {
+            say('   ! no encontré imágenes en el pie del sitio');
+        }
+        // barra lateral: logo oscuro
+        $side = '';
+        foreach (q($bx, '//main//img | //*[@data-elementor-type="wp-page"]//img') as $i) {
+            $u = $imgSrc($i, $BASE . '/blog/');
+            if ($u !== '' && str_contains($u, '/uploads/') && preg_match('/logo/i', $u . ' ' . $i->getAttribute('alt') . ' ' . $i->getAttribute('class'))) {
+                $side = $u;
+                break;
+            }
+        }
+        if ($side === '') {
+            foreach (q($bx, '//aside//img | //*[contains(@class,"elementor-widget-image")]//img') as $i) {
+                $u = $imgSrc($i, $BASE . '/blog/');
+                if ($u !== '' && str_contains($u, '/uploads/') && !preg_match('/flag|favicon|icon/i', $u)) {
+                    $side = $u;
+                    break;
+                }
+            }
+        }
+        $side !== '' ? $grab($side, 'logo-dark.png') : say('   ! no encontré el logo oscuro de la barra lateral (usa --logodark=URL)');
+        // banner de la guía turística (fondo de un call-to-action)
+        $cta = q($bx, '//*[contains(@class,"elementor-cta__bg")]/@style');
+        if ($cta && preg_match('#url\(["\']?([^)"\']+)#', $cta[0]->nodeValue, $m)) {
+            $grab(absUrl($m[1], $BASE . '/blog/'), 'guia.webp');
+        } else {
+            say('   ! no encontré el banner de la guía turística');
+        }
+        // Instagram: miniaturas del widget
+        $ig = [];
+        foreach (q($bx, '//*[contains(@id,"sb_instagram") or contains(@class,"sbi_item")]//img') as $i) {
+            $u = $imgSrc($i, $BASE . '/blog/');
+            if ($u !== '' && !str_contains($u, 'avatar') && !in_array($u, $ig, true)) {
+                $ig[] = $u;
+            }
+        }
+        foreach (array_slice($ig, 0, 9) as $n => $u) {
+            $grab($u, 'ig/' . ($n + 1) . '.jpg');
+        }
+        if (!$ig) {
+            say('   ! no encontré fotos de Instagram en el blog (el widget se carga con JavaScript; puedes poner imágenes en public/uploads/site/ig/)');
+        }
+        // bandera del otro idioma (la que muestra el sitio en español es la de inglés)
+        foreach (q($bx, '//img[contains(@class,"trp-flag-image")]') as $i) {
+            $u = $imgSrc($i, $BASE . '/blog/');
+            if (str_contains($u, 'en_US') || str_contains($u, 'en_GB')) {
+                $grab($u, 'flags/en.png');
+                break;
+            }
+        }
+    }
+    $ebx = ($t = http($BASE . '/en/blog/')) ? dom($t) : null;
+    if ($ebx) {
+        foreach (q($ebx, '//img[contains(@class,"trp-flag-image")]') as $i) {
+            $u = $imgSrc($i, $BASE . '/en/blog/');
+            if (preg_match('/es_(MX|ES)|es_/', $u)) {
+                $grab($u, 'flags/es.png');
+                break;
+            }
+        }
     }
 }
 
@@ -696,6 +907,41 @@ if (in_array('blog', $ONLY, true)) {
         say('   ! no pude leer /wp-json/wp/v2/posts (¿REST API desactivada?)');
     }
     $total = count($list);
+    // Categorías del blog (con jerarquía) y sus nombres en inglés
+    $catMap = [];
+    $cj = http($BASE . '/wp-json/wp/v2/categories?per_page=100&orderby=id&order=asc');
+    $cl = $cj ? json_decode($cj, true) : null;
+    if (is_array($cl) && $cl && !isset($cl['code'])) {
+        $enNames = [];
+        if ($t = http($BASE . '/en/blog/')) {
+            $ex = dom($t);
+            foreach (q($ex, '//a[contains(@href,"/en/blog/")]') as $a) {
+                $seg = basename(rtrim((string) parse_url($a->getAttribute('href'), PHP_URL_PATH), '/'));
+                $nm = trim((string) preg_replace('/\s*\(\d+\)\s*$/u', '', preg_replace('/\s+/u', ' ', $a->textContent)));
+                if ($seg !== '' && $nm !== '' && !isset($enNames[$seg])) {
+                    $enNames[$seg] = $nm;
+                }
+            }
+        }
+        foreach ($cl as $c) {
+            if (in_array($c['slug'] ?? '', ['sin-categoria', 'uncategorized'], true)) {
+                continue;
+            }
+            $row = DB::one('SELECT id FROM categories WHERE slug = ?', [$c['slug']]);
+            $cid = $row ? (int) $row['id'] : DB::insert('categories', ['slug' => $c['slug'], 'parent_id' => null, 'sort_order' => (int) $c['id']]);
+            $catMap[(int) $c['id']] = $cid;
+            upsertTr('category_translations', 'category_id', $cid, 'es', ['name' => html_entity_decode((string) $c['name'])]);
+            if (!empty($enNames[$c['slug']])) {
+                upsertTr('category_translations', 'category_id', $cid, 'en', ['name' => $enNames[$c['slug']]]);
+            }
+        }
+        foreach ($cl as $c) {
+            if (isset($catMap[(int) $c['id']]) && !empty($c['parent']) && isset($catMap[(int) $c['parent']])) {
+                DB::update('categories', ['parent_id' => $catMap[(int) $c['parent']]], 'id = ?', [$catMap[(int) $c['id']]]);
+            }
+        }
+        say('   categorías: ' . count($catMap));
+    }
     foreach ($list as $idx => $p) {
         $slug = (string) ($p['slug'] ?? '');
         if ($slug === '') {
@@ -714,10 +960,16 @@ if (in_array('blog', $ONLY, true)) {
         } else {
             $pid = DB::insert('posts', $data + ['slug' => $slug]);
         }
+        DB::exec('DELETE FROM post_categories WHERE post_id = ?', [$pid]);
+        foreach ((array) ($p['categories'] ?? []) as $wid) {
+            if (isset($catMap[(int) $wid])) {
+                DB::insert('post_categories', ['post_id' => $pid, 'category_id' => $catMap[(int) $wid]]);
+            }
+        }
         $title = trim(html_entity_decode(strip_tags((string) ($p['title']['rendered'] ?? ''))));
         $x = dom('<div id="r">' . (string) ($p['content']['rendered'] ?? '') . '</div>');
         $node = q($x, '//*[@id="r"]')[0] ?? null;
-        $content = $node ? tidy(cleanNode($node, $pageUrl, 'blog')) : '';
+        $content = $node ? assemble(tidy(cleanNode($node, $pageUrl, 'blog')), false) : '';
         $ex = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags((string) ($p['excerpt']['rendered'] ?? '')))));
         $ex = preg_replace('/\s*(\[…\]|\[&hellip;\]|Read more.*|Leer más.*)$/iu', '', $ex);
         upsertTr('post_translations', 'post_id', $pid, 'es', ['title' => $title, 'excerpt' => mb_strimwidth((string) $ex, 0, 280, '…'), 'content' => $content]);
@@ -731,7 +983,7 @@ if (in_array('blog', $ONLY, true)) {
             $h1 = q($ex2, '//h1');
             if ($body && $h1) {
                 $enTitle = trim(preg_replace('/\s+/u', ' ', $h1[0]->textContent));
-                $enContent = tidy(cleanNode($body, enUrl($pageUrl, $BASE), 'blog'));
+                $enContent = assemble(tidy(cleanNode($body, enUrl($pageUrl, $BASE), 'blog')), false);
                 $t = q($ex2, '//title');
                 if ($enContent !== '') {
                     upsertTr('post_translations', 'post_id', $pid, 'en', [
@@ -799,15 +1051,6 @@ if (in_array('pages', $ONLY, true)) {
             $h1 = q($x, '//h1');
             $title = $h1 ? trim(preg_replace('/\s+/u', ' ', $h1[0]->textContent)) : '';
             $bg = pageHero($x, $url);
-            // carruseles: dejar solo la primera imagen
-            foreach (q($x, '//*[' . hasClass('swiper-wrapper') . ']') as $sw) {
-                $i = 0;
-                foreach (iterator_to_array($sw->childNodes) as $slide) {
-                    if ($slide instanceof DOMElement && $i++ > 0) {
-                        $sw->removeChild($slide);
-                    }
-                }
-            }
             // el <h1> ya sale en la barra de título del sitio nuevo; no repetirlo en el cuerpo
             foreach (q($x, './/h1', $main) as $hh) {
                 $hh->parentNode?->removeChild($hh);
@@ -818,6 +1061,7 @@ if (in_array('pages', $ONLY, true)) {
                 preg_match_all('#<(p|h[2-4]|ul)\b.*?</\1>#is', $content, $m);
                 $content = implode("\n", array_slice($m[0], 0, 6));
             }
+            $content = assemble($content, $slug !== 'inicio');
             $t = q($x, '//title');
             return [
                 'title' => $title !== '' ? $title : ($t ? trim(preg_replace('/\s*[|–-].*$/u', '', $t[0]->textContent)) : ''),

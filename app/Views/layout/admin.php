@@ -1,7 +1,7 @@
 <?php
 $p = $_SERVER['ZT_PATH'] ?? '';
 $nav = [
-  ['admin', 'Resumen'], ['admin/reservas', 'Reservas'], ['admin/calendario', 'Calendario'], ['admin/experiencias', 'Experiencias'], ['admin/paginas', 'Páginas'], ['admin/blog', 'Blog'],
+  ['admin', 'Resumen'], ['admin/reservas', 'Reservas'], ['admin/calendario', 'Calendario'], ['admin/experiencias', 'Experiencias'], ['admin/paginas', 'Páginas'], ['admin/blog', 'Blog'], ['admin/categorias', 'Categorías'],
   ['admin/horarios', 'Horarios'], ['admin/extras', 'Extras'], ['admin/bloqueos', 'Bloqueos'], ['admin/clientes', 'Clientes'], ['admin/ajustes', 'Ajustes'],
 ];
 ?>

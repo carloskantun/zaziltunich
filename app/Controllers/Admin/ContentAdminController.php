@@ -112,7 +112,9 @@ final class ContentAdminController extends Base
                 $tr[$t['lang']] = $t;
             }
         }
-        $this->page('post_form', ['title' => $row ? 'Editar entrada' : 'Nueva entrada', 'row' => $row, 'tr' => $tr], ['admin']);
+        $cats = DB::all('SELECT c.id, c.slug, t.name FROM categories c LEFT JOIN category_translations t ON t.category_id = c.id AND t.lang = \'es\' ORDER BY t.name');
+        $mine = $id ? array_map('intval', array_column(DB::all('SELECT category_id FROM post_categories WHERE post_id = ?', [$id]), 'category_id')) : [];
+        $this->page('post_form', ['title' => $row ? 'Editar entrada' : 'Nueva entrada', 'row' => $row, 'tr' => $tr, 'cats' => $cats, 'mine' => $mine], ['admin']);
     }
 
     public function postSave(): void
@@ -144,6 +146,12 @@ final class ContentAdminController extends Base
                     DB::insert('post_translations', $row + ['post_id' => $id, 'lang' => $l]);
                 }
             }
+            DB::exec('DELETE FROM post_categories WHERE post_id = ?', [$id]);
+            foreach (array_unique(array_map('intval', (array) ($_POST['cats'] ?? []))) as $cid) {
+                if ($cid && DB::value('SELECT 1 FROM categories WHERE id = ?', [$cid])) {
+                    DB::insert('post_categories', ['post_id' => $id, 'category_id' => $cid]);
+                }
+            }
             return $id;
         });
         $this->back('admin/blog/' . $saved, 'Entrada guardada.');
@@ -154,5 +162,52 @@ final class ContentAdminController extends Base
         $this->guard(['admin']);
         DB::exec('DELETE FROM posts WHERE id = ?', [(int) $p['id']]);
         $this->back('admin/blog', 'Entrada eliminada.');
+    }
+
+    // ---- Categorías del blog
+    public function categories(): void
+    {
+        $rows = DB::all('SELECT c.*, (SELECT COUNT(*) FROM post_categories pc WHERE pc.category_id = c.id) AS n FROM categories c ORDER BY c.sort_order, c.id');
+        foreach ($rows as &$r) {
+            foreach (DB::all('SELECT lang, name FROM category_translations WHERE category_id = ?', [$r['id']]) as $t) {
+                $r['name_' . $t['lang']] = $t['name'];
+            }
+        }
+        $this->page('categories', ['title' => 'Categorías del blog', 'rows' => $rows], ['admin', 'operator', 'viewer']);
+    }
+
+    public function categorySave(): void
+    {
+        $this->guard(['admin']);
+        $id = (int) ($_POST['id'] ?? 0);
+        $es = trim((string) ($_POST['name_es'] ?? ''));
+        $slug = $this->slugify((string) (($_POST['slug'] ?? '') ?: $es));
+        if ($slug === '' || $es === '') {
+            $this->back('admin/categorias', 'Falta el nombre.', 'err');
+        }
+        if (DB::value('SELECT 1 FROM categories WHERE slug = ? AND id <> ?', [$slug, $id])) {
+            $this->back('admin/categorias', 'Ya existe una categoría con esa dirección.', 'err');
+        }
+        $parent = (int) ($_POST['parent_id'] ?? 0);
+        $data = ['slug' => $slug, 'parent_id' => ($parent && $parent !== $id) ? $parent : null, 'sort_order' => (int) ($_POST['sort_order'] ?? 0)];
+        DB::tx(function () use (&$id, $data, $es) {
+            $id ? DB::update('categories', $data, 'id = ?', [$id]) : $id = DB::insert('categories', $data);
+            foreach (['es' => $es, 'en' => trim((string) ($_POST['name_en'] ?? ''))] as $l => $name) {
+                if (DB::value('SELECT 1 FROM category_translations WHERE category_id = ? AND lang = ?', [$id, $l])) {
+                    DB::update('category_translations', ['name' => $name], 'category_id = ? AND lang = ?', [$id, $l]);
+                } else {
+                    DB::insert('category_translations', ['category_id' => $id, 'lang' => $l, 'name' => $name]);
+                }
+            }
+        });
+        $this->back('admin/categorias', 'Categoría guardada.');
+    }
+
+    public function categoryDelete(array $p): void
+    {
+        $this->guard(['admin']);
+        DB::exec('UPDATE categories SET parent_id = NULL WHERE parent_id = ?', [(int) $p['id']]);
+        DB::exec('DELETE FROM categories WHERE id = ?', [(int) $p['id']]);
+        $this->back('admin/categorias', 'Categoría eliminada.');
     }
 }

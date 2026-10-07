@@ -5,7 +5,9 @@ $t = static fn ($l, $f) => $tr[$l][$f] ?? ''; ?>
   <label class="fld"><span>Dirección (slug)</span><input name="slug" value="<?= e($v['slug']) ?>"></label>
   <label class="fld"><span>Estado</span><select name="status"><option value="published"<?= $v['status'] === 'published' ? ' selected' : '' ?>>Publicada</option><option value="draft"<?= $v['status'] === 'draft' ? ' selected' : '' ?>>Borrador</option></select></label>
   <label class="fld"><span>Fecha</span><input type="date" name="published_at" value="<?= e(substr($v['published_at'], 0, 10)) ?>"></label>
-</div><label class="fld"><span>Imagen destacada</span><input type="file" name="image" accept="image/*"></label>
+</div>
+<?php if (!empty($cats)): ?><fieldset class="fld"><span>Categorías</span><div class="chips"><?php foreach ($cats as $c): ?><label class="chk"><input type="checkbox" name="cats[]" value="<?= (int) $c['id'] ?>"<?= in_array((int) $c['id'], $mine ?? [], true) ? ' checked' : '' ?>> <?= e($c['name'] ?: $c['slug']) ?></label> <?php endforeach; ?></div></fieldset><?php endif; ?>
+<label class="fld"><span>Imagen destacada</span><input type="file" name="image" accept="image/*"></label>
 <?php if ($v['image']): ?><img class="thumb" src="<?= e(raw_url('uploads/' . $v['image'])) ?>" alt=""><?php endif; ?></section>
 <?php foreach (['es' => 'Español', 'en' => 'English'] as $l => $n): ?>
 <section class="panel"><h2><?= $n ?></h2>

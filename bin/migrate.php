@@ -8,5 +8,7 @@ if (!App\Core\Config::installed()) {
     fwrite(STDERR, "Aún no está instalado.\n");
     exit(1);
 }
-App\Core\Database::runSchema((string) file_get_contents(ROOT . '/database/002_content.sql'));
+foreach (['002_content', '003_categories'] as $f) {
+    App\Core\Database::runSchema((string) file_get_contents(ROOT . '/database/' . $f . '.sql'));
+}
 echo "Migraciones aplicadas.\n";

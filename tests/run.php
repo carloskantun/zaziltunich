@@ -34,7 +34,9 @@ if (getenv('ZT_MYSQL_DB')) {
     DB::connect(['driver' => 'sqlite', 'path' => ':memory:']);
 }
 DB::runSchema((string) file_get_contents(ROOT . '/database/schema.sql'));
-DB::runSchema((string) file_get_contents(ROOT . '/database/002_content.sql'));
+foreach (['002_content', '003_categories'] as $f) {
+    DB::runSchema((string) file_get_contents(ROOT . '/database/' . $f . '.sql'));
+}
 Seeder::settings();
 Seeder::catalog();
 

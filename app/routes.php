@@ -56,6 +56,9 @@ return static function (Router $r): void {
     $r->post('/admin/paginas/guardar', [Admin\ContentAdminController::class, 'pageSave']);
     $r->get('/admin/paginas/{id}', [Admin\ContentAdminController::class, 'pageForm']);
     $r->post('/admin/paginas/{id}/eliminar', [Admin\ContentAdminController::class, 'pageDelete']);
+    $r->get('/admin/categorias', [Admin\ContentAdminController::class, 'categories']);
+    $r->post('/admin/categorias', [Admin\ContentAdminController::class, 'categorySave']);
+    $r->post('/admin/categorias/{id}/eliminar', [Admin\ContentAdminController::class, 'categoryDelete']);
     $r->get('/admin/blog', [Admin\ContentAdminController::class, 'posts']);
     $r->get('/admin/blog/nueva', [Admin\ContentAdminController::class, 'postNew']);
     $r->post('/admin/blog/guardar', [Admin\ContentAdminController::class, 'postSave']);

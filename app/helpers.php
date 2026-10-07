@@ -179,3 +179,41 @@ function status_label(string $status): string
 {
     return t('status.' . $status);
 }
+
+/** Ícono SVG en línea (public/assets/icons/<nombre>.svg), pintado con el color del texto. */
+function icon(string $name, string $class = ''): string
+{
+    static $cache = [];
+    if (!isset($cache[$name])) {
+        $file = ROOT . '/public/assets/icons/' . preg_replace('/[^a-z0-9-]/', '', $name) . '.svg';
+        $svg = is_file($file) ? (string) file_get_contents($file) : '';
+        $svg = preg_replace(['/<!--.*?-->/s', '/<title>.*?<\/title>/s'], '', $svg) ?? '';
+        $cache[$name] = preg_replace('/^<svg /', '<svg aria-hidden="true" focusable="false" ', trim($svg)) ?? '';
+    }
+    return $cache[$name] === '' ? '' : str_replace('<svg ', '<svg class="i' . ($class !== '' ? ' ' . e($class) : '') . '" ', $cache[$name]);
+}
+
+/** Datos del sitio para cabecera, pie y barra lateral (editables en Ajustes, con valores del sitio actual por defecto). */
+function site_info(): array
+{
+    $s = static fn (string $k, string $d) => \App\Domain\Settings::get($k, $d);
+    $wa = preg_replace('/\D+/', '', $s('contact_whatsapp', '529851305096'));
+    return [
+        'email' => $s('contact_email', 'info@zaziltunich.com'),
+        'phone' => $s('site_phone_label', '+52 (985) 130-5096'),
+        'wa' => 'https://wa.me/' . $wa,
+        'address' => $s('site_address', 'Carretera Yalcobá-Xtut Km. 6, 97780 Valladolid, Yuc.'),
+        'social' => array_filter([
+            'facebook-f' => $s('social_facebook', 'https://www.facebook.com/zaziltunich/'),
+            'tripadvisor' => $s('social_tripadvisor', 'https://www.tripadvisor.com.mx/Attraction_Review-g499453-d12210266-Reviews-Zazil_Tunich-Valladolid_Yucatan_Peninsula.html'),
+            'x-twitter' => $s('social_x', 'https://x.com/zaziltunich'),
+            'instagram' => $s('social_instagram', 'https://www.instagram.com/zaziltunich/'),
+        ]),
+    ];
+}
+
+/** URL de un archivo de uploads/site si existe, o null. */
+function site_file(string $rel): ?string
+{
+    return is_file(ROOT . '/public/uploads/site/' . $rel) ? raw_url('uploads/site/' . $rel) : null;
+}

@@ -6,6 +6,12 @@
     <label class="fld"><span>Teléfono para llamadas</span><input name="contact_phone" value="<?= e($s['contact_phone'] ?? '') ?>"></label>
     <label class="fld"><span>Número para SMS (vacío = el de llamadas)</span><input name="contact_sms" value="<?= e($s['contact_sms'] ?? '') ?>"></label>
     <label class="fld"><span>Correo de contacto</span><input type="email" name="contact_email" value="<?= e($s['contact_email'] ?? '') ?>"></label>
+    <label class="fld"><span>Teléfono tal como se muestra en el pie (ej. +52 (985) 130-5096)</span><input name="site_phone_label" value="<?= e($s['site_phone_label'] ?? '') ?>"></label>
+    <label class="fld"><span>Dirección (pie de página)</span><input name="site_address" value="<?= e($s['site_address'] ?? '') ?>"></label>
+    <label class="fld"><span>Facebook (URL)</span><input name="social_facebook" value="<?= e($s['social_facebook'] ?? '') ?>"></label>
+    <label class="fld"><span>Instagram (URL)</span><input name="social_instagram" value="<?= e($s['social_instagram'] ?? '') ?>"></label>
+    <label class="fld"><span>X (URL)</span><input name="social_x" value="<?= e($s['social_x'] ?? '') ?>"></label>
+    <label class="fld"><span>TripAdvisor (URL)</span><input name="social_tripadvisor" value="<?= e($s['social_tripadvisor'] ?? '') ?>"></label>
     <label class="fld"><span>Minutos que se retiene el cupo sin pago (0 = sin límite)</span><input type="number" name="hold_minutes" value="<?= e($s['hold_minutes'] ?? '1440') ?>"></label>
     <label class="fld"><span>Instrucciones de pago (ES)</span><textarea name="payment_instructions_es" rows="4"><?= e($s['payment_instructions_es'] ?? '') ?></textarea></label>
     <label class="fld"><span>Payment instructions (EN)</span><textarea name="payment_instructions_en" rows="4"><?= e($s['payment_instructions_en'] ?? '') ?></textarea></label>
