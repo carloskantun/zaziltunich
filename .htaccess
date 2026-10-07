@@ -1,0 +1,5 @@
+# Raíz del proyecto en public_html: todo se sirve desde /public; app/, storage/ y database/ quedan inaccesibles.
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
