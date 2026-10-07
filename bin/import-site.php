@@ -467,6 +467,9 @@ function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
         }
         $tag = strtolower($c->tagName);
         $cls = ' ' . preg_replace('/\s+/', ' ', $c->getAttribute('class')) . ' ';
+        if (str_contains($cls, ' elementor-hidden-desktop ')) {
+            continue;
+        }
         if ($tag === 'iframe') {
             $out .= embedBlock($c);
             continue;
@@ -627,6 +630,108 @@ function plainClean(DOMNode $n): string
     return trim($t);
 }
 
+
+/** Datos propios de la portada: introducción oscura, video, reseñas, ubicación y mapa. */
+function homeExtras(DOMXPath $x, DOMNode $main, string $url, string $imgDir): array
+{
+    $out = [];
+    $cn = static fn (DOMNode $n): string => trim(preg_replace('/\s+/u', ' ', $n->textContent) ?? '');
+    $sections = q($x, './*[@data-id]', $main);
+    // introducción: primera sección con texto largo que no sea la ventana emergente (pestañas)
+    foreach ($sections as $i => $sec) {
+        if ($i === 0 || q($x, ".//*[contains(@class,'elementor-widget-nested-tabs')]", $sec)) {
+            continue;
+        }
+        if (q($x, ".//*[contains(@class,'elementor-widget-text-editor')]", $sec) && count(q($x, './/p', $sec)) >= 3) {
+            $out['intro'] = tidy(cleanNode($sec, $url, $imgDir));
+            break;
+        }
+    }
+    // video de YouTube
+    foreach (q($x, ".//*[contains(@class,'elementor-widget-video')]", $main) as $w) {
+        $set = json_decode($w->getAttribute('data-settings'), true) ?: [];
+        if (preg_match('#(?:v=|youtu\.be/|embed/)([\w-]{11})#', (string) ($set['youtube_url'] ?? ''), $m)) {
+            $out['video'] = $m[1];
+            break;
+        }
+    }
+    // reseñas (listado dinámico de Tripadvisor)
+    $rev = [];
+    $seen = [];
+    foreach (q($x, ".//*[contains(@class,'jet-listing-grid__item')]", $main) as $it) {
+        $heads = [];
+        foreach (q($x, ".//*[contains(@class,'elementor-heading-title')]", $it) as $h) {
+            if (($t = $cn($h)) !== '') {
+                $heads[] = $t;
+            }
+        }
+        if (count($heads) < 2) {
+            continue;
+        }
+        $text = '';
+        foreach ($heads as $h) {
+            if (mb_strlen($h) > mb_strlen($text)) {
+                $text = $h;
+            }
+        }
+        $name = '';
+        foreach ($heads as $h) {
+            if ($h !== $text && !preg_match('/^(cliente|client|customer)$/i', $h)) {
+                $name = $h;
+                break;
+            }
+        }
+        if ($text === '' || isset($seen[$text])) {
+            continue;
+        }
+        $seen[$text] = 1;
+        $rev[] = ['text' => $text, 'name' => $name];
+    }
+    $out['reviews'] = $rev;
+    foreach (q($x, ".//*[contains(@class,'elementor-heading-title')]", $main) as $h) {
+        $t = $cn($h);
+        if (preg_match('/^\d\.\d$/', $t)) {
+            $out['rating'] = $t;
+        } elseif (preg_match('/^\((\d+)\)$/', $t, $m)) {
+            $out['count'] = $m[1];
+        }
+    }
+    // mapa y texto de ubicación
+    foreach ($sections as $sec) {
+        $fr = q($x, './/iframe', $sec);
+        if (!$fr) {
+            continue;
+        }
+        $src = $fr[0]->getAttribute('data-lazy-src') ?: $fr[0]->getAttribute('data-src') ?: $fr[0]->getAttribute('src');
+        if (preg_match('#google\.com/maps|maps\.google#i', $src)) {
+            $out['map'] = html_entity_decode($src);
+            foreach (q($x, ".//*[contains(@class,'elementor-widget-text-editor')]", $sec) as $te) {
+                $out['location'] = tidy(cleanNode($te, $url, $imgDir));
+                break;
+            }
+            break;
+        }
+    }
+    say('   portada: intro ' . (isset($out['intro']) ? 'ok' : 'NO') . ', video ' . ($out['video'] ?? 'NO') . ', reseñas ' . count($rev) . ', mapa ' . (isset($out['map']) ? 'ok' : 'NO') . ', ubicación ' . (isset($out['location']) ? 'ok' : 'NO'));
+    return $out;
+}
+
+function saveHomeExtras(array $e, string $lang): void
+{
+    $S = \App\Domain\Settings::class;
+    if (!empty($e['video'])) {
+        $S::set('home_video', $e['video']);
+    }
+    if (!empty($e['reviews'])) {
+        $S::set('home_reviews', json_encode(['rating' => $e['rating'] ?? '5.0', 'count' => $e['count'] ?? '', 'items' => $e['reviews']], JSON_UNESCAPED_UNICODE));
+    }
+    if (!empty($e['map']) && $lang === 'es') {
+        $S::set('home_map', $e['map']);
+    }
+    if (!empty($e['location'])) {
+        $S::set('home_location_' . $lang, $e['location']);
+    }
+}
 
 /** CSS de Elementor de la página (una sola descarga por página). */
 function elementorCss(DOMXPath $x, string $url): string
@@ -1287,18 +1392,19 @@ if (in_array('pages', $ONLY, true)) {
                     }
                 }
             } else {
-                $content = tidy(cleanNode($main, $url, $imgDir));
+                $content = $slug === 'inicio' ? '' : tidy(cleanNode($main, $url, $imgDir));
             }
+            $extra = [];
             if ($slug === 'inicio') {
-                // solo una introducción corta: los primeros bloques
-                preg_match_all('#<(p|h[2-4]|ul)\b.*?</\1>#is', $content, $m);
-                $content = implode("\n", array_slice($m[0], 0, 6));
+                $extra = homeExtras($x, $main, $url, $imgDir);
+                $content = $extra['intro'] ?? '';
             }
             $content = $sections ? $content : assemble($content, $slug !== 'inicio');
             $t = q($x, '//title');
             return [
                 'title' => $title !== '' ? $title : ($t ? trim(preg_replace('/\s*[|–-].*$/u', '', $t[0]->textContent)) : ''),
                 'content' => $content,
+                'extra' => $extra,
                 'og' => $bg ?: absUrl(meta($x, 'og:image'), $url),
                 'seo_title' => $t ? trim(preg_replace('/\s+/u', ' ', $t[0]->textContent)) : '',
                 'seo_description' => meta($x, 'og:description') ?: meta($x, 'description'),
@@ -1322,8 +1428,14 @@ if (in_array('pages', $ONLY, true)) {
         } else {
             $pid = DB::insert('pages', $data + ['slug' => $slug]);
         }
+        if ($slug === 'inicio' && !empty($es['extra'])) {
+            saveHomeExtras($es['extra'], 'es');
+        }
         upsertTr('page_translations', 'page_id', $pid, 'es', ['title' => $es['title'] ?: $lEs, 'nav_label' => $lEs, 'content' => $es['content'], 'seo_title' => $es['seo_title'], 'seo_description' => $es['seo_description']]);
         $en = $parse($enUrl, 'paginas');
+        if ($slug === 'inicio' && $en && !empty($en['extra'])) {
+            saveHomeExtras($en['extra'], 'en');
+        }
         if ($en && $en['content'] !== '') {
             upsertTr('page_translations', 'page_id', $pid, 'en', ['title' => $en['title'] ?: $lEn, 'nav_label' => $lEn, 'content' => $en['content'], 'seo_title' => $en['seo_title'], 'seo_description' => $en['seo_description']]);
             say('   ES + EN');
