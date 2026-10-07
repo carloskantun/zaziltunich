@@ -3,6 +3,12 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../app/bootstrap.php';
 
+// El instalador nunca debe quedar accesible tras completar la instalación.
+if (\App\Core\Config::installed()) {
+    http_response_code(404);
+    exit;
+}
+
 use App\Core\Config;
 use App\Domain\Installer;
 
