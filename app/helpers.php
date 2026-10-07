@@ -20,6 +20,13 @@ function base_url(): string
     return rtrim((string) Config::get('base_url', ''), '/');
 }
 
+/** El subdominio de revisión no acepta reservas reales ni debe indexarse. */
+function is_preview_host(): bool
+{
+    $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    return explode(':', $host, 2)[0] === 'zazil.serviciomultimedia.com';
+}
+
 /** Ruta base (por ejemplo "" o "/zazil") derivada de base_url. */
 function base_path(): string
 {

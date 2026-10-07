@@ -56,6 +56,11 @@ final class PublicController
 
     public function confirm(): void
     {
+        if (is_preview_host()) {
+            http_response_code(403);
+            echo 'Esta versión es de revisión y no acepta reservas reales.';
+            return;
+        }
         \App\Core\Auth::checkCsrf();
         $exp = Catalog::load((int) ($_POST['exp'] ?? 0));
         if (!$exp || $exp['status'] !== 'published') {

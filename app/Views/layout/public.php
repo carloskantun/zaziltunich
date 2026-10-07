@@ -22,6 +22,7 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php if (is_preview_host()): ?><meta name="robots" content="noindex,nofollow,noarchive"><?php endif; ?>
 <title><?= e($title ?? $site) ?> | <?= e($site) ?></title>
 <?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
 <link rel="alternate" hreflang="es" href="<?= e(url($path, 'es')) ?>">
@@ -31,6 +32,7 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body class="<?= e($bodyClass) ?>">
+<?php if (is_preview_host()): ?><div role="status" style="background:#173c2d;color:#fff;text-align:center;padding:10px 16px;font:600 14px/1.4 system-ui,sans-serif">Versión de revisión para el cliente · No se aceptan reservas reales</div><?php endif; ?>
 <header class="site-header">
   <a class="brand" href="<?= e(url('/')) ?>"><?php if ($logo): ?><img src="<?= e($logo) ?>" alt="<?= e($site) ?>"><?php else: ?><span><?= e(strtoupper($site)) ?></span><?php endif; ?></a>
   <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="<?= e(t('nav.menu')) ?>"><label for="nav-toggle" class="burger"><i></i><i></i><i></i></label>

@@ -26,6 +26,10 @@ if (!Config::installed()) {
     exit;
 }
 
+if (is_preview_host()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive');
+}
+
 $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $bp = base_path();
 if ($bp !== '' && str_starts_with($path, $bp)) {
