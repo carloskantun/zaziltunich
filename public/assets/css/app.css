@@ -287,3 +287,39 @@ fieldset.extra small{display:block;font-size:11px;margin-bottom:4px;color:#555}
 .embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .prose .slider .slide{aspect-ratio:16/10}
 @media(max-width:700px){.pcard{width:100%}}
+
+/* ---- pie más compacto (igual al sitio) ---- */
+.site-footer{font-size:14px;padding-top:56px}
+.foot-logo{width:190px}
+.foot-brand p{font-size:15px}
+.site-footer .social a{width:40px;height:40px;font-size:18px}
+.foot-contact h4{font-size:15px;margin:26px 0 26px}
+.foot-contact ul{gap:14px;margin-bottom:30px}
+.foot-contact li{font-size:15px}
+.legal{gap:14px;font-size:15px}
+.legal a{color:#fff;text-decoration:none}
+.legal .chk{display:flex;gap:8px;align-items:center;justify-content:center}
+.legal .chk svg{width:14px;height:14px}
+.foot-ta p{font-size:20px;margin:40px 0 28px}
+.foot-ta img{width:120px}
+.site-footer .copy{font-size:15px;padding:26px 0;margin-top:44px}
+
+/* ---- secciones de página ---- */
+.prose .sec{margin:0 0 40px}
+.prose .band{position:relative;margin:50px calc(50% - 50vw);padding:90px 20px;background-size:cover;background-position:center;color:#fff;text-align:center;isolation:isolate}
+.prose .band::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:-1}
+.band-in{max-width:900px;margin:0 auto}
+.band p{color:#fff;text-align:center}
+.band p:first-of-type{font:italic 400 28px var(--font-head,Amiri,serif);color:#F5B754;margin:0}
+.band p:nth-of-type(2){font:400 40px/1.2 var(--font-head,Amiri,serif);margin:0 0 24px}
+.band .btn-row{display:inline-block;margin:6px 8px}
+.band .btn-row ~ .btn-row .btn{background:transparent;color:#fff;border:1.5px solid #fff}
+/* tarjetas de producto del carrusel */
+.pc-row{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 40px)/3);gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;margin:28px 0;clear:both}
+.pc{scroll-snap-align:start;display:block;border-radius:20px;overflow:hidden;background:#1b1b1b;color:#fff;text-decoration:none}
+.pc img{width:100%;aspect-ratio:1/.93;object-fit:cover;display:block}
+.pc-b{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:16px 20px}
+.pc-t{font-size:17px;line-height:1.1}
+.pc-b b{grid-column:1;color:#F5B754;font-size:19px;font-weight:500}
+.pc-b .btn{grid-column:2;grid-row:1/3}
+@media(max-width:800px){.pc-row{grid-auto-columns:85%}.band p:nth-of-type(2){font-size:30px}}

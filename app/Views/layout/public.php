@@ -55,7 +55,7 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
         <li><?= icon('whatsapp') ?><a href="<?= e($si['wa']) ?>" target="_blank" rel="noopener"><?= e($si['phone']) ?></a></li>
         <li><?= icon('location-dot') ?><span><?= e($si['address']) ?></span></li>
       </ul>
-      <p class="legal"><a href="<?= e(url('/terminos-y-condiciones')) ?>"><?= e(t('footer.terms')) ?></a><a href="<?= e(url('/politica-de-privacidad')) ?>"><?= e(t('footer.privacy')) ?></a></p>
+      <p class="legal"><a href="<?= e(url('/terminos-y-condiciones')) ?>"><?= e(t('footer.terms')) ?></a><a href="<?= e(url('/politica-de-privacidad')) ?>"><?= e(t('footer.privacy')) ?></a><a class="chk" href="<?= e(url('/contacto')) ?>"><?= icon('check') ?><?= e(t('footer.contactpage')) ?></a><a class="chk" href="<?= e(url('/como-llegar')) ?>"><?= icon('check') ?><?= e(t('footer.howto')) ?></a></p>
     </div>
     <div class="foot-ta">
       <p><?= e(t('footer.recommended')) ?></p>

@@ -230,7 +230,7 @@ function iconBox(DOMElement $c, string $pageUrl): string
     if ($svg && $svg->length) {
         $xml = $c->ownerDocument->saveXML($svg->item(0));
         $xml = preg_replace('/\s+xmlns(:\w+)?="[^"]*"/', '', (string) $xml);
-        $xml = preg_replace('/^<svg/', '<svg xmlns="http://www.w3.org/2000/svg"', (string) $xml);
+        $xml = preg_replace('/^<svg/', '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"', (string) $xml);
         $xml = str_ireplace(['viewbox=', 'preserveaspectratio='], ['viewBox=', 'preserveAspectRatio='], $xml);
         $xml = preg_replace('/\s(width|height)="[^"]*"/', '', $xml, 2) ?? $xml;
         @mkdir($UP . '/icons', 0775, true);
@@ -418,8 +418,34 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         $nav = count($seen) > 1 ? '<button class="prev" type="button" aria-label="Anterior">‹</button><button class="next" type="button" aria-label="Siguiente">›</button>' : '';
         return ph('<div class="slider"><div class="slides">' . $slides . '</div>' . $nav . '</div>');
     }
+    // carrusel de productos (tarjetas con foto, nombre, precio y botón)
+    if (str_contains($cls, ' elementor-widget-loop-carousel ')) {
+        $cards = '';
+        foreach ($x->query('.//*[' . $has('swiper-slide') . ' and not(' . $has('swiper-slide-duplicate') . ')]', $c) ?: [] as $sl) {
+            $a = $x->query('.//a[@href]', $sl);
+            $img = $x->query('.//img', $sl);
+            $ti = $x->query('.//*[' . $has('elementor-heading-title') . ' or self::h1 or self::h2 or self::h3 or self::h4]', $sl);
+            $pr = $x->query('.//*[contains(@class,"price") or contains(@class,"Price-amount")]', $sl);
+            if (!$a || !$a->length || !$ti || !$ti->length) {
+                continue;
+            }
+            $href = absUrl($a->item(0)->getAttribute('href'), $pageUrl);
+            $path = (string) parse_url($href, PHP_URL_PATH);
+            $src = '';
+            if ($img && $img->length) {
+                $iu = $img->item(0)->getAttribute('data-lazy-src') ?: $img->item(0)->getAttribute('src');
+                $sv = $iu !== '' ? saveImage(absUrl($iu, $pageUrl), $imgDir) : null;
+                $src = $sv ? '<img src="/uploads/' . $sv . '" alt="" loading="lazy">' : '';
+            }
+            $price = $pr && $pr->length ? esc($pr->item(0)->textContent) : '';
+            $cards .= '<a class="pc" href="' . htmlspecialchars($path ?: '/', ENT_QUOTES, 'UTF-8') . '">' . $src
+                . '<span class="pc-b"><span class="pc-t">' . esc($ti->item(0)->textContent) . '</span>'
+                . ($price !== '' ? '<b>' . $price . '</b>' : '') . '<i class="btn btn-sm">' . esc(($x->query('.//*[' . $has('elementor-button-text') . ']', $sl)->item(0)?->textContent ?? 'Reservar')) . '</i></span></a>';
+        }
+        return $cards === '' ? '' : ph('<div class="pc-row">' . $cards . '</div>');
+    }
     // widgets sin contenido propio de página (formularios, reseñas, plantillas, JS)
-    foreach (['reviews', 'shortcode', 'html', 'template', 'jet-listing-grid', 'woocommerce-menu-cart', 'pdfjs-viewer', 'social-icons', 'rating', 'spacer', 'divider', 'wpr-flip-carousel', 'loop-carousel', 'theme-post-featured-image'] as $skip) {
+    foreach (['reviews', 'shortcode', 'html', 'template', 'jet-listing-grid', 'woocommerce-menu-cart', 'pdfjs-viewer', 'social-icons', 'rating', 'spacer', 'divider', 'wpr-flip-carousel', 'theme-post-featured-image'] as $skip) {
         if (str_contains($cls, " elementor-widget-$skip ") || str_contains($cls, " elementor-widget-$skip.")) {
             return '';
         }
@@ -601,6 +627,26 @@ function plainClean(DOMNode $n): string
     return trim($t);
 }
 
+
+/** CSS de Elementor de la página (una sola descarga por página). */
+function elementorCss(DOMXPath $x, string $url): string
+{
+    $all = '';
+    foreach (q($x, '//link[@rel="stylesheet"]/@href') as $h) {
+        if (preg_match('#elementor/css/post-\d+\.css#', $h->nodeValue)) {
+            $all .= (string) http(absUrl($h->nodeValue, $url)) . "\n";
+        }
+    }
+    return $all;
+}
+
+function sectionBg(string $css, string $id, string $url): ?string
+{
+    if ($id !== '' && preg_match('#[^{}]*elementor-element-' . preg_quote($id, '#') . '[^{}]*\{[^}]*background-image:\s*url\(["\']?([^)"\']+)["\']?\)#', $css, $m)) {
+        return absUrl($m[1], $url);
+    }
+    return null;
+}
 
 /** Imagen de fondo de la primera sección de la página (portada de cada página en Elementor). */
 function pageHero(DOMXPath $x, string $url): ?string
@@ -1223,13 +1269,32 @@ if (in_array('pages', $ONLY, true)) {
             foreach (q($x, './/h1', $main) as $hh) {
                 $hh->parentNode?->removeChild($hh);
             }
-            $content = tidy(cleanNode($main, $url, $imgDir));
+            $sections = $slug === 'inicio' ? [] : q($x, './*[@data-id]', $main);
+            if ($sections) {
+                $css = elementorCss($x, $url);
+                $content = '';
+                foreach ($sections as $i => $sec) {
+                    $part = assemble(tidy(cleanNode($sec, $url, $imgDir)), false);
+                    if (trim(strip_tags($part, '<img><iframe><video>')) === '' && !str_contains($part, '<img') && !str_contains($part, '<iframe') && !str_contains($part, '<video')) {
+                        continue;
+                    }
+                    $bgu = $i > 0 ? sectionBg($css, $sec->getAttribute('data-id'), $url) : null;
+                    $bgs = $bgu ? saveImage($bgu, $imgDir) : null;
+                    if ($bgs) {
+                        $content .= '<section class="band" style="background-image:url(/uploads/' . $bgs . ')"><div class="band-in">' . $part . '</div></section>' . "\n";
+                    } else {
+                        $content .= '<section class="sec">' . assemble($part, true) . '</section>' . "\n";
+                    }
+                }
+            } else {
+                $content = tidy(cleanNode($main, $url, $imgDir));
+            }
             if ($slug === 'inicio') {
                 // solo una introducción corta: los primeros bloques
                 preg_match_all('#<(p|h[2-4]|ul)\b.*?</\1>#is', $content, $m);
                 $content = implode("\n", array_slice($m[0], 0, 6));
             }
-            $content = assemble($content, $slug !== 'inicio');
+            $content = $sections ? $content : assemble($content, $slug !== 'inicio');
             $t = q($x, '//title');
             return [
                 'title' => $title !== '' ? $title : ($t ? trim(preg_replace('/\s*[|–-].*$/u', '', $t[0]->textContent)) : ''),

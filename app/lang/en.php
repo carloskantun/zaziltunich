@@ -102,6 +102,8 @@ return [
     'footer.recommended' => 'Recommended by TripAdvisor',
     'footer.terms' => 'Terms and conditions',
     'footer.privacy' => 'Privacy policy',
+    'footer.contactpage' => 'Contact',
+    'footer.howto' => 'How to get here',
     'footer.copy' => 'Copyright ©',
     'footer.tagline' => 'Sanctuary of the Mayan underworld.',
     'nav.account' => 'My account',

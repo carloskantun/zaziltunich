@@ -102,6 +102,8 @@ return [
     'footer.recommended' => 'Recomendado por TripAdvisor',
     'footer.terms' => 'Términos y condiciones',
     'footer.privacy' => 'Política de privacidad',
+    'footer.contactpage' => 'Contacto',
+    'footer.howto' => 'Cómo llegar',
     'footer.copy' => 'Copyright ©',
     'footer.tagline' => 'Santuario del inframundo maya.',
     'nav.account' => 'Mi cuenta',
