@@ -486,3 +486,31 @@ a:focus-visible,button:focus-visible,.btn:focus-visible,input:focus-visible,summ
 /* footer / enlaces */
 a{transition:color var(--d1) var(--ease)}
 @media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* ===== Footer: medidas exactas del sitio original (contenedor 1140, columnas 25/50/25, Montserrat 14px) ===== */
+.site-footer{background:#181818;border-top:4px solid #f5b754;padding:0 50px;font:400 14px/21px 'Montserrat',sans-serif;color:#fff}
+.site-footer .foot-grid{max-width:1140px;margin:0 auto;padding:50px 0;display:grid;grid-template-columns:25% 50% 25%;gap:0;align-items:start;text-align:center}
+.site-footer .foot-grid>div{padding:10px}
+.site-footer .foot-logo{display:block;width:186px;height:auto;margin:31px auto 0}
+.site-footer .foot-brand p{margin:19px 0 0;font:400 14px/14px 'Montserrat',sans-serif;color:rgba(255,247,233,.56)}
+.site-footer .social{margin-top:20px;gap:10px;justify-content:center}
+.site-footer .social a{width:36px;height:36px;font-size:18px;background:#fff;color:#181818;border-radius:50%}
+.site-footer .social svg{width:18px;height:18px}
+.site-footer .foot-contact h4{margin:0;font:500 14px/14px 'Montserrat',sans-serif;letter-spacing:0;text-transform:uppercase;color:rgba(226,226,226,.97)}
+.site-footer .foot-contact ul{list-style:none;margin:0;padding:0;display:block}
+.site-footer .foot-contact h4+ul{margin-top:45px}
+.site-footer .foot-contact li{display:flex;justify-content:center;align-items:center;margin:0 0 10px;font:400 14px/21px 'Montserrat',sans-serif;color:#fffcfc;gap:0}
+.site-footer .foot-contact li svg{width:14px;height:14px;margin-right:4px;flex:none}
+.site-footer .foot-contact a,.site-footer .foot-contact li span{color:#fffcfc;text-decoration:none}
+.site-footer .foot-contact a:hover{color:#f5b754}
+.site-footer .foot-contact .legal{margin:50px 0 0;padding:0;list-style:none;display:block;font-size:14px}
+.site-footer .foot-contact .legal li{margin:0 0 10px;height:21px}
+.site-footer .legal a{display:inline-flex;align-items:center;color:#fffcfc;text-decoration:none}
+.site-footer .legal .chk svg{width:14px;height:14px;margin-right:4px}
+.site-footer .foot-ta p{margin:137px 0 0;font:400 17px/17px 'Montserrat',sans-serif;color:rgba(255,255,255,.82)}
+.site-footer .foot-ta img{display:block;width:120px;height:auto;margin:20px auto 0}
+.site-footer .copy{margin:0 -50px;max-width:none;border-top:1px solid #f5b754;padding:0}
+.site-footer .copy p{max-width:1140px;margin:0 auto;padding:15px 10px;font:400 14px/20px 'Montserrat',sans-serif;color:#fff;text-align:center}
+.home-loc{padding-bottom:120px}
+@media(max-width:900px){.site-footer{padding:0 20px}.site-footer .foot-grid{grid-template-columns:1fr}.site-footer .foot-ta p{margin-top:10px}.site-footer .copy{margin:0 -20px}}
+.site-footer .foot-contact .legal li:last-child{margin-bottom:0}

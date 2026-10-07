@@ -55,14 +55,14 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
         <li><?= icon('whatsapp') ?><a href="<?= e($si['wa']) ?>" target="_blank" rel="noopener"><?= e($si['phone']) ?></a></li>
         <li><?= icon('location-dot') ?><span><?= e($si['address']) ?></span></li>
       </ul>
-      <p class="legal"><a href="<?= e(url('/terminos-y-condiciones')) ?>"><?= e(t('footer.terms')) ?></a><a href="<?= e(url('/politica-de-privacidad')) ?>"><?= e(t('footer.privacy')) ?></a><a class="chk" href="<?= e(url('/contacto')) ?>"><?= icon('check') ?><?= e(t('footer.contactpage')) ?></a><a class="chk" href="<?= e(url('/como-llegar')) ?>"><?= icon('check') ?><?= e(t('footer.howto')) ?></a></p>
+      <ul class="legal"><li><a href="<?= e(url('/terminos-y-condiciones')) ?>"><?= e(t('footer.terms')) ?></a></li><li><a href="<?= e(url('/politica-de-privacidad')) ?>"><?= e(t('footer.privacy')) ?></a></li><li><a class="chk" href="<?= e(url('/contacto')) ?>"><?= icon('check') ?><?= e(t('footer.contactpage')) ?></a></li><li><a class="chk" href="<?= e(url('/como-llegar')) ?>"><?= icon('check') ?><?= e(t('footer.howto')) ?></a></li></ul>
     </div>
     <div class="foot-ta">
       <p><?= e(t('footer.recommended')) ?></p>
       <?php if ($badge): ?><a href="<?= e($taUrl) ?>" target="_blank" rel="noopener"><img src="<?= e($badge) ?>" alt="TripAdvisor" loading="lazy"></a><?php endif; ?>
     </div>
   </div>
-  <p class="copy"><?= e(t('footer.copy')) ?> <?= date('Y') ?> <?= e($site) ?></p>
+  <div class="copy"><p><?= e(t('footer.copy')) ?> <?= date('Y') ?> <?= e($site) ?></p></div>
 </footer>
 <?php if ($floating): ?>
 <div class="float-contact">
