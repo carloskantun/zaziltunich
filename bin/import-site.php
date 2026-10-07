@@ -319,6 +319,24 @@ function plainClean(DOMNode $n): string
     return trim($t);
 }
 
+
+/** Imagen de fondo de la primera sección de la página (portada de cada página en Elementor). */
+function pageHero(DOMXPath $x, string $url): ?string
+{
+    $first = q($x, "(//*[@data-elementor-type='wp-page']/*[@data-id])[1]");
+    $id = $first ? $first[0]->getAttribute('data-id') : '';
+    $cands = [];
+    foreach (q($x, '//link[@rel="stylesheet"]/@href') as $h) {
+        if (preg_match('#elementor/css/post-\d+\.css#', $h->nodeValue)) {
+            $css = http(absUrl($h->nodeValue, $url));
+            if ($css && $id !== '' && preg_match_all('#[^{}]*elementor-element-' . preg_quote($id, '#') . '[^{}]*\{[^}]*background-image:\s*url\(["\']?([^)"\']+)["\']?\)#', $css, $m)) {
+                $cands = array_merge($cands, $m[1]);
+            }
+        }
+    }
+    return $cands ? absUrl($cands[0], $url) : null;
+}
+
 // ---------------------------------------------------------------- utilidades de BD
 function upsertTr(string $table, string $fk, int $id, string $lang, array $row): void
 {
@@ -702,10 +720,10 @@ if (in_array('pages', $ONLY, true)) {
         'inicio' => ['Inicio', 'Home', 0, 0, ''],
         'mapa-del-recorrido' => ['Mapa del recorrido', 'Tour map', 10, 0, ''],
         'romance' => ['Romance', 'Romance', 20, 0, ''],
-        'bodasencenote' => ['Bodas', 'Weddings', 30, 0, ''],
-        'premios-zazil-tunich' => ['Premios', 'Awards', 40, 0, ''],
-        'fundacion' => ['Fundación', 'Foundation', 50, 0, ''],
-        'faq' => ['FAQ', 'FAQ', 100, 0, ''],
+        'bodasencenote' => ['Bodasencenote', 'Weddings', 30, 0, ''],
+        'premios-zazil-tunich' => ['Premio nacional', 'National award', 40, 0, ''],
+        'fundacion' => ['ONG', 'NGO', 50, 0, ''],
+        'faq' => ['FAQs', 'FAQs', 100, 0, ''],
     ];
     foreach ($pages as $slug => [$lEs, $lEn, $sort, $dark, $enPath]) {
         $esUrl = $slug === 'inicio' ? $BASE . '/' : $BASE . '/' . $slug . '/';
@@ -722,6 +740,16 @@ if (in_array('pages', $ONLY, true)) {
             }
             $h1 = q($x, '//h1');
             $title = $h1 ? trim(preg_replace('/\s+/u', ' ', $h1[0]->textContent)) : '';
+            $bg = pageHero($x, $url);
+            // carruseles: dejar solo la primera imagen
+            foreach (q($x, '//*[' . hasClass('swiper-wrapper') . ']') as $sw) {
+                $i = 0;
+                foreach (iterator_to_array($sw->childNodes) as $slide) {
+                    if ($slide instanceof DOMElement && $i++ > 0) {
+                        $sw->removeChild($slide);
+                    }
+                }
+            }
             // el <h1> ya sale en la barra de título del sitio nuevo; no repetirlo en el cuerpo
             foreach (q($x, './/h1', $main) as $hh) {
                 $hh->parentNode?->removeChild($hh);
@@ -736,7 +764,7 @@ if (in_array('pages', $ONLY, true)) {
             return [
                 'title' => $title !== '' ? $title : ($t ? trim(preg_replace('/\s*[|–-].*$/u', '', $t[0]->textContent)) : ''),
                 'content' => $content,
-                'og' => absUrl(meta($x, 'og:image'), $url),
+                'og' => $bg ?: absUrl(meta($x, 'og:image'), $url),
                 'seo_title' => $t ? trim(preg_replace('/\s+/u', ' ', $t[0]->textContent)) : '',
                 'seo_description' => meta($x, 'og:description') ?: meta($x, 'description'),
             ];

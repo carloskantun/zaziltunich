@@ -27,7 +27,7 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
 <link rel="alternate" hreflang="es" href="<?= e(url($path, 'es')) ?>">
 <link rel="alternate" hreflang="en" href="<?= e(url($path, 'en')) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body class="<?= e($bodyClass) ?>">

@@ -13,7 +13,8 @@ body.dark{background:var(--dark);color:#fff}
 a{color:var(--gold)}
 img{max-width:100%;display:block}
 h1,h2,h3,h4{line-height:1.2;margin:0 0 .6em;font-weight:600}
-h2{font-weight:400;font-size:36px}
+h1,h2{font-family:'Amiri',Georgia,serif;font-weight:400}
+h2{font-size:38px}
 body.dark h2,.band.dark h2{color:var(--cream)}
 .muted{color:var(--muted)}
 .center{text-align:center}
@@ -21,7 +22,8 @@ body.dark h2,.band.dark h2{color:var(--cream)}
 /* Cabecera transparente sobre la imagen */
 .site-header{position:absolute;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:32px;padding:20px 40px;color:#fff;background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0))}
 .brand{color:#fff;text-decoration:none;font-weight:300;font-size:20px;letter-spacing:6px;line-height:1.1;max-width:120px}
-.brand img{max-height:70px;width:auto}
+.brand img{height:110px;width:auto;max-width:none}
+.site-header{align-items:flex-start}.site-header nav{padding-top:22px}
 .site-header nav{display:flex;align-items:center;flex-wrap:wrap;gap:4px 18px;margin-left:auto;margin-right:auto}
 .site-header nav a{color:#fff;text-decoration:none;font-size:14px;font-weight:500;padding:8px 0}
 .site-header nav a.on,.site-header nav a:hover{color:var(--gold)}
@@ -32,11 +34,11 @@ main{display:block}
 /* Hero y banda de título */
 .hero{min-height:732px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;background:var(--dark) center/cover}
 .hero-inner{padding:120px 20px 80px;max-width:900px}
-.hero h1{font-size:clamp(26px,4vw,36px);font-weight:400;margin-bottom:.3em}
+.hero h1{font-size:clamp(34px,5vw,56px);font-weight:400;margin-bottom:.3em}
 .hero .gold,.titlebar .gold{color:var(--gold);font-weight:600;font-size:clamp(18px,2.6vw,24px);margin:0 0 28px}
-.titlebar{padding:150px 20px 60px;text-align:center;color:#fff;background:var(--dark) center/cover}
-.titlebar h1{font-size:30px;font-weight:600;margin:0}
-.titlebar .rule{display:block;width:80px;height:2px;background:var(--gold);margin:12px auto 0}
+.titlebar{min-height:490px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:130px 20px 60px;text-align:center;color:#fff;background:var(--dark) center/cover}
+.titlebar h1{font-size:clamp(34px,5vw,50px);margin:0}
+.titlebar .rule{display:block;width:167px;height:3px;background:var(--gold);margin:12px auto 0}
 .titlebar p{margin:14px 0 0;opacity:.9}
 
 /* Bandas y contenedor */
@@ -45,8 +47,14 @@ main{display:block}
 .band.light{background:#fff;color:#333}
 .wrap{max-width:var(--maxw);margin:0 auto}
 .wrap.narrow{max-width:780px}
-.prose{font-size:16px;line-height:1.7}
-.prose h2{font-size:30px;margin-top:1.4em}.prose h3{font-size:22px;margin-top:1.2em}
+.prose{font-size:15px;line-height:1.7;text-align:justify}
+.prose::after{content:'';display:block;clear:both}
+.prose h2{font-size:38px;margin-top:1.2em;text-align:center;clear:both}.prose h2:first-child{margin-top:0}
+.prose h3{text-align:left}
+.prose p:has(>img:only-child):first-of-type,.prose h2+p:has(>img:only-child){float:left;width:46%;margin:0 36px 16px 0}
+.prose p:has(>img:only-child) img{margin:0;width:100%;max-height:560px;object-fit:cover}
+@media(max-width:800px){.prose p:has(>img:only-child):first-of-type,.prose h2+p:has(>img:only-child){float:none;width:100%;margin:0 0 16px}}
+.prose h3{font-size:22px;margin-top:1.2em}
 .prose img{border-radius:var(--radius);margin:20px 0}
 .prose a{color:var(--gold)}
 .band.light .prose a{color:#b9760c}
