@@ -298,9 +298,15 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
 {
     $x = new DOMXPath($c->ownerDocument);
     $has = static fn (string $cl): string => 'contains(concat(" ",normalize-space(@class)," ")," ' . $cl . ' ")';
+    // tipo de widget según Elementor (data-widget_type); las clases usan otros nombres (n-tabs, n-accordion)
+    $wt = strtolower(explode('.', $c->getAttribute('data-widget_type'))[0]);
+    $wt = ['n-tabs' => 'nested-tabs', 'n-accordion' => 'nested-accordion'][$wt] ?? $wt;
+    $is = static fn (string $n): bool => $wt === $n || str_contains($cls, " elementor-widget-$n ")
+        || ($n === 'nested-tabs' && str_contains($cls, ' elementor-widget-n-tabs '))
+        || ($n === 'nested-accordion' && str_contains($cls, ' elementor-widget-n-accordion '));
 
     // pestañas anidadas
-    if (str_contains($cls, ' elementor-widget-nested-tabs ')) {
+    if ($is('nested-tabs')) {
         $titles = [];
         foreach ($x->query('.//*[' . $has('e-n-tab-title') . ']', $c) ?: [] as $t) {
             $titles[] = esc($t->textContent);
@@ -321,7 +327,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return ph('<div class="wtabs"><div class="wtab-list">' . $nav . '</div>' . $body . '</div>');
     }
     // acordeón / preguntas frecuentes
-    if (str_contains($cls, ' elementor-widget-nested-accordion ')) {
+    if ($is('nested-accordion')) {
         $out = '';
         foreach ($x->query('.//details', $c) ?: [] as $d) {
             $s = $x->query('.//summary', $d);
@@ -335,7 +341,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return $out === '' ? '' : ph('<div class="acc-list">' . $out . '</div>');
     }
     // botón → .btn
-    if (str_contains($cls, ' elementor-widget-button ')) {
+    if ($is('button')) {
         $a = $x->query('.//a', $c);
         if (!$a || !$a->length) {
             return '';
@@ -351,7 +357,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return ph('<p class="btn-row"><a class="btn" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . $label . '</a></p>');
     }
     // tarjetas con giro (precios de boda)
-    if (str_contains($cls, ' elementor-widget-flip-box ')) {
+    if ($is('flip-box')) {
         $front = $x->query('.//*[' . $has('elementor-flip-box__front') . ']', $c);
         $back = $x->query('.//*[' . $has('elementor-flip-box__back') . ']', $c);
         $f = $front && $front->length ? esc($front->item(0)->textContent) : '';
@@ -359,7 +365,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return $f . $b === '' ? '' : ph('<div class="pcard"><strong>' . $f . '</strong><span>' . $b . '</span></div>');
     }
     // video propio (alojado)
-    if (str_contains($cls, ' elementor-widget-video ')) {
+    if ($is('video')) {
         $set = json_decode($c->getAttribute('data-settings'), true) ?: [];
         $url = $set['hosted_url']['url'] ?? ($set['youtube_url'] ?? ($set['vimeo_url'] ?? ''));
         if ($url === '') {
@@ -378,11 +384,12 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return '';
     }
     // galería en cuadrícula
-    if (str_contains($cls, ' elementor-widget-gallery ')) {
+    if ($is('gallery')) {
         $seen = [];
         $items = '';
         foreach ($x->query('.//*[@data-thumbnail or ' . $has('e-gallery-image') . ']', $c) ?: [] as $g) {
-            $u = $g->getAttribute('data-thumbnail') ?: $g->getAttribute('href');
+            $par = $g->parentNode instanceof DOMElement ? $g->parentNode : null;
+            $u = ($par && $par->tagName === 'a' ? $par->getAttribute('href') : '') ?: $g->getAttribute('data-thumbnail') ?: $g->getAttribute('href');
             $abs = absUrl($u, $pageUrl);
             $k = preg_replace('/-\d{2,4}x\d{2,4}(\.\w+)$/', '$1', $abs);
             if ($abs === '' || isset($seen[$k])) {
@@ -396,7 +403,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return $items === '' ? '' : ph('<div class="gallery">' . $items . '</div>');
     }
     // slides a todo ancho (fondos con texto)
-    if (str_contains($cls, ' elementor-widget-slides ')) {
+    if ($is('slides')) {
         $slides = '';
         $seen = [];
         foreach ($x->query('.//*[' . $has('swiper-slide-bg') . ']', $c) ?: [] as $bg) {
@@ -419,7 +426,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
         return ph('<div class="slider"><div class="slides">' . $slides . '</div>' . $nav . '</div>');
     }
     // carrusel de productos (tarjetas con foto, nombre, precio y botón)
-    if (str_contains($cls, ' elementor-widget-loop-carousel ')) {
+    if ($is('loop-carousel')) {
         $cards = '';
         foreach ($x->query('.//*[' . $has('swiper-slide') . ' and not(' . $has('swiper-slide-duplicate') . ')]', $c) ?: [] as $sl) {
             $a = $x->query('.//a[@href]', $sl);
@@ -446,7 +453,7 @@ function widgetBlock(DOMElement $c, string $cls, string $pageUrl, string $imgDir
     }
     // widgets sin contenido propio de página (formularios, reseñas, plantillas, JS)
     foreach (['reviews', 'shortcode', 'html', 'template', 'jet-listing-grid', 'woocommerce-menu-cart', 'pdfjs-viewer', 'social-icons', 'rating', 'spacer', 'divider', 'wpr-flip-carousel', 'theme-post-featured-image'] as $skip) {
-        if (str_contains($cls, " elementor-widget-$skip ") || str_contains($cls, " elementor-widget-$skip.")) {
+        if ($is($skip)) {
             return '';
         }
     }
@@ -481,7 +488,7 @@ function cleanNode(DOMNode $n, string $pageUrl, string $imgDir): string
             $out .= iconBox($c, $pageUrl);
             continue;
         }
-        if (str_contains($cls, ' elementor-widget-') && ($w = widgetBlock($c, $cls, $pageUrl, $imgDir)) !== null) {
+        if ((str_contains($cls, ' elementor-widget-') || $c->hasAttribute('data-widget_type')) && ($w = widgetBlock($c, $cls, $pageUrl, $imgDir)) !== null) {
             $out .= $w;
             continue;
         }
@@ -637,9 +644,46 @@ function homeExtras(DOMXPath $x, DOMNode $main, string $url, string $imgDir): ar
     $out = [];
     $cn = static fn (DOMNode $n): string => trim(preg_replace('/\s+/u', ' ', $n->textContent) ?? '');
     $sections = q($x, './*[@data-id]', $main);
-    // introducción: primera sección con texto largo que no sea la ventana emergente (pestañas)
+    // portada: diapositivas de fondo de la primera sección (galería en data-settings)
+    if ($sections) {
+        $set = json_decode($sections[0]->getAttribute('data-settings'), true) ?: [];
+        $slides = [];
+        foreach ($set['background_slideshow_gallery'] ?? [] as $g) {
+            if (!empty($g['url']) && ($sv = saveImage(absUrl($g['url'], $url), 'hero'))) {
+                $slides[] = $sv;
+            }
+        }
+        if ($slides) {
+            $out['hero'] = $slides;
+            $out['hero_ms'] = (int) ($set['background_slideshow_slide_duration'] ?? 5000);
+        }
+    }
+    // galería (cuadrícula tipo mosaico)
+    foreach (q($x, ".//*[@data-widget_type='gallery.default']", $main) as $gw) {
+        $imgs = [];
+        foreach (q($x, ".//*[contains(@class,'e-gallery-item')]", $gw) as $it) {
+            $u = $it->getAttribute('href');
+            if ($u === '') {
+                foreach (q($x, ".//*[@data-thumbnail]", $it) as $th) {
+                    $u = $th->getAttribute('data-thumbnail');
+                    break;
+                }
+            }
+            if ($u !== '' && ($sv = saveImage(absUrl($u, $url), 'galeria'))) {
+                $imgs[$sv] = $sv;
+            }
+            if (count($imgs) >= 24) {
+                break;
+            }
+        }
+        if ($imgs) {
+            $out['gallery'] = array_values($imgs);
+            break;
+        }
+    }
+    // introducción: primera sección visible con texto largo que no sea la ventana emergente (pestañas)
     foreach ($sections as $i => $sec) {
-        if ($i === 0 || q($x, ".//*[contains(@class,'elementor-widget-nested-tabs')]", $sec)) {
+        if ($i === 0 || str_contains(' ' . $sec->getAttribute('class') . ' ', ' elementor-hidden-desktop ') || q($x, ".//*[@data-widget_type='nested-tabs.default' or @data-widget_type='n-tabs.default']", $sec)) {
             continue;
         }
         if (q($x, ".//*[contains(@class,'elementor-widget-text-editor')]", $sec) && count(q($x, './/p', $sec)) >= 3) {
@@ -712,7 +756,7 @@ function homeExtras(DOMXPath $x, DOMNode $main, string $url, string $imgDir): ar
             break;
         }
     }
-    say('   portada: intro ' . (isset($out['intro']) ? 'ok' : 'NO') . ', video ' . ($out['video'] ?? 'NO') . ', reseñas ' . count($rev) . ', mapa ' . (isset($out['map']) ? 'ok' : 'NO') . ', ubicación ' . (isset($out['location']) ? 'ok' : 'NO'));
+    say('   portada: hero ' . count($out['hero'] ?? []) . ' fotos, galería ' . count($out['gallery'] ?? []) . ' fotos, intro ' . (isset($out['intro']) ? 'ok' : 'NO') . ', video ' . ($out['video'] ?? 'NO') . ', reseñas ' . count($rev) . ', mapa ' . (isset($out['map']) ? 'ok' : 'NO') . ', ubicación ' . (isset($out['location']) ? 'ok' : 'NO'));
     return $out;
 }
 
@@ -721,6 +765,12 @@ function saveHomeExtras(array $e, string $lang): void
     $S = \App\Domain\Settings::class;
     if (!empty($e['video'])) {
         $S::set('home_video', $e['video']);
+    }
+    if (!empty($e['hero'])) {
+        $S::set('home_hero_slides', json_encode(['ms' => $e['hero_ms'] ?? 5000, 'items' => $e['hero']]));
+    }
+    if (!empty($e['gallery'])) {
+        $S::set('home_gallery', json_encode($e['gallery']));
     }
     if (!empty($e['reviews'])) {
         $S::set('home_reviews', json_encode(['rating' => $e['rating'] ?? '5.0', 'count' => $e['count'] ?? '', 'items' => $e['reviews']], JSON_UNESCAPED_UNICODE));
@@ -1379,6 +1429,9 @@ if (in_array('pages', $ONLY, true)) {
                 $css = elementorCss($x, $url);
                 $content = '';
                 foreach ($sections as $i => $sec) {
+                    if (str_contains(' ' . $sec->getAttribute('class') . ' ', ' elementor-hidden-desktop ')) {
+                        continue;
+                    }
                     $part = assemble(tidy(cleanNode($sec, $url, $imgDir)), false);
                     if (trim(strip_tags($part, '<img><iframe><video>')) === '' && !str_contains($part, '<img') && !str_contains($part, '<iframe') && !str_contains($part, '<video')) {
                         continue;

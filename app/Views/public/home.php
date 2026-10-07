@@ -12,12 +12,10 @@ $map = Settings::get('home_map');
 $loc = Settings::get('home_location_' . (\App\Core\I18n::lang())) ?: Settings::get('home_location_es');
 $si = site_info();
 $taUrl = $si['social']['tripadvisor'] ?? '#';
-// galería: fotos de Instagram si existen; si no, las fotos de los productos
+// galería: fotos importadas del sitio; si no hay, las de los productos
 $gal = [];
-foreach (glob(ROOT . '/public/uploads/site/ig/*.{jpg,jpeg,png,webp}', GLOB_BRACE) ?: [] as $f) {
-    if (filesize($f) > 15000) {
-        $gal[] = raw_url('uploads/site/ig/' . basename($f));
-    }
+foreach (json_decode(Settings::get('home_gallery'), true) ?: [] as $rel) {
+    $gal[] = raw_url('uploads/' . $rel);
 }
 if (count($gal) < 6) {
     $gal = [];
@@ -27,15 +25,27 @@ if (count($gal) < 6) {
         }
     }
 }
-$gal = array_slice($gal, 0, 12);
+$gal = array_slice($gal, 0, 24);
+// portada: diapositivas de fondo
+$hs = json_decode(Settings::get('home_hero_slides'), true) ?: [];
+$slides = [];
+foreach ($hs['items'] ?? [] as $rel) {
+    $slides[] = raw_url('uploads/' . $rel);
+}
+if (!$slides && $heroImg) {
+    $slides[] = $heroImg;
+}
 ?>
-<section class="hero hero-home"<?= $heroImg ? ' style="background-image:linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.3)),url(' . e($heroImg) . ')"' : '' ?>>
+<section class="hero hero-home">
+  <div class="hero-slides" data-ms="<?= (int) ($hs['ms'] ?? 5000) ?>">
+    <?php foreach ($slides as $i => $sl): ?><div class="hs<?= $i === 0 ? ' on' : '' ?>" style="background-image:url(<?= e($sl) ?>)"></div><?php endforeach; ?>
+  </div>
   <div class="hero-inner">
     <h1><?= e(t('home.hero_title')) ?></h1>
     <p class="gold"><?= e(t('home.hero_sub')) ?></p>
-    <a class="btn btn-sm" href="<?= e(url('/reservaciones')) ?>"><?= e(t('home.hero_cta')) ?></a>
+    <a class="btn" href="<?= e(url('/reservaciones')) ?>"><?= e(t('home.hero_cta')) ?></a>
   </div>
-  <a class="hero-down" href="#intro" aria-label="↓"><?= icon('angle-right') ?></a>
+  <a class="hero-down" href="#intro" aria-label="↓"><?= icon('arrow-down') ?></a>
 </section>
 
 <?php if ($introHtml !== ''): ?>

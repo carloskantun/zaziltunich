@@ -18,3 +18,15 @@ document.querySelectorAll('.wtabs').forEach(function (w) {
     });
   });
 });
+
+// Portada: diapositivas de fondo que cambian solas.
+document.querySelectorAll('.hero-slides').forEach(function (box) {
+  var sl = box.querySelectorAll('.hs');
+  if (sl.length < 2) return;
+  var i = 0, ms = parseInt(box.getAttribute('data-ms'), 10) || 5000;
+  setInterval(function () {
+    sl[i].classList.remove('on');
+    i = (i + 1) % sl.length;
+    sl[i].classList.add('on');
+  }, ms);
+});
