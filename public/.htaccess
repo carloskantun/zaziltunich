@@ -2,7 +2,8 @@ Options -Indexes
 RewriteEngine On
 RewriteCond %{HTTP_HOST} ^zazil\.serviciomultimedia\.com$ [NC]
 RewriteCond %{HTTPS} !=on
-RewriteRule ^ https://zazil.serviciomultimedia.com%{REQUEST_URI} [R=301,L]
+RewriteCond %{THE_REQUEST} \s/+([^\s?]*) [NC]
+RewriteRule ^ https://zazil.serviciomultimedia.com/%1 [R=301,L,NE]
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
