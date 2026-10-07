@@ -157,18 +157,24 @@ function saveImage(string $url, string $dir = '', bool $keepPng = false): ?strin
     if (isset($done[$key])) {
         return $done[$key];
     }
-    $bin = http($full) ?? ($full !== $url ? http($url) : null);
-    if ($bin === null) {
-        $stats['img_fail']++;
-        say("   ! no se pudo bajar: $url");
-        return $done[$key] = null;
-    }
     $name = preg_replace('/[^a-z0-9]+/', '-', strtolower(pathinfo((string) parse_url($full, PHP_URL_PATH), PATHINFO_FILENAME))) ?: 'img';
     $name = trim(substr($name, 0, 60), '-') ?: 'img';
     $sub = trim($dir, '/');
     $folder = $UP . ($sub !== '' ? '/' . $sub : '');
     @mkdir($folder, 0775, true);
     $rel = 'site/' . ($sub !== '' ? $sub . '/' : '');
+    // ya descargada en una corrida anterior
+    foreach (['webp', 'jpg', 'png', 'gif'] as $e) {
+        if (is_file($folder . '/' . $name . '.' . $e)) {
+            return $done[$key] = $rel . $name . '.' . $e;
+        }
+    }
+    $bin = http($full) ?? ($full !== $url ? http($url) : null);
+    if ($bin === null) {
+        $stats['img_fail']++;
+        say("   ! no se pudo bajar: $url");
+        return $done[$key] = null;
+    }
     $info = @getimagesizefromstring($bin);
     if ($info && function_exists('imagewebp') && !$keepPng && in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
         $img = @imagecreatefromstring($bin);
@@ -660,7 +666,7 @@ if (in_array('products', $ONLY, true)) {
 /** Contenido principal de un artículo (HTML completo de la página). */
 function articleBody(DOMXPath $x): ?DOMNode
 {
-    foreach (['//*[' . hasClass('elementor-widget-theme-post-content') . ']', '//*[' . hasClass('entry-content') . ']', '//*[' . hasClass('post-content') . ']', '//article'] as $qq) {
+    foreach (['//*[@data-elementor-type="wp-post"]', '//*[' . hasClass('elementor-widget-theme-post-content') . ']', '//*[' . hasClass('entry-content') . ']', '//*[' . hasClass('post-content') . ']', '//article'] as $qq) {
         $r = q($x, $qq);
         if ($r) {
             return $r[0];
