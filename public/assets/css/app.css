@@ -432,3 +432,57 @@ fieldset.extra small{display:block;font-size:11px;margin-bottom:4px;color:#555}
 .lb-x{top:20px;right:22px}.lb-p{left:22px;top:50%;margin-top:-25px}.lb-n{right:22px;top:50%;margin-top:-25px}
 .lb-c{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#bbb;font-size:14px;letter-spacing:2px}
 .lb-lock{overflow:hidden}
+
+/* ===== Tokens exactos del sistema de diseño del sitio (Montserrat, 12–19 px, base 16/24) ===== */
+:root{
+  --t-primary:#f5b754; --t-ink:#181818; --t-white:#fff; --t-body:#333; --t-black:#000; --t-dark:#1b1b1b;
+  --r-xs:10px; --r-sm:20px; --r-md:28px; --r-lg:30px; --r-xl:50px;
+  --sh:rgba(0,0,0,.16) 0 8px 22px 0;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+  --ease:cubic-bezier(.4,0,.2,1); --d1:200ms; --d2:300ms; --d3:400ms;
+  --fs-12:12px; --fs-14:14px; --fs-15:15px; --fs-16:16px; --fs-17:17px; --fs-18:18px; --fs-19:19px;
+}
+body{font:400 16px/24px 'Montserrat',system-ui,sans-serif;color:var(--t-body)}
+.home-w{max-width:1140px}
+/* botones: 99 usos, píldora dorada, texto tinta, transición 200ms */
+.btn{border-radius:var(--r-lg);background:var(--t-primary);color:var(--t-ink);font:500 16px/24px 'Montserrat',sans-serif;padding:12px 32px;transition:background var(--d1) var(--ease),box-shadow var(--d1) var(--ease),transform var(--d1) var(--ease)}
+.btn:hover{filter:none;background:#e6a43c;box-shadow:var(--sh)}
+.btn:active{transform:translateY(1px)}
+.btn-sm{padding:8px 24px;font-size:15px}
+a:focus-visible,button:focus-visible,.btn:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--t-primary);outline-offset:3px}
+/* hero */
+.hero-home h1{font:300 clamp(26px,3.2vw,40px)/1.2 'Montserrat',sans-serif;letter-spacing:0}
+.hero-home .gold{font:700 clamp(18px,2.2vw,28px)/1.3 'Montserrat',sans-serif;color:var(--t-primary)}
+/* intro oscura */
+.home-intro{background:var(--t-dark)}
+.home-intro h2{font:600 clamp(24px,2.6vw,31px)/1.25 'Montserrat',sans-serif;color:#fff}
+.home-intro h3{font:400 clamp(19px,2vw,25px)/1.35 'Montserrat',sans-serif;color:#fff}
+.home-intro p,.home-intro li{font:400 17px/1.7 'Montserrat',sans-serif}
+/* tarjetas de producto */
+.hcar .slide.pc,.pc{border-radius:var(--r-sm);background:#fff;box-shadow:var(--sh);overflow:hidden;transition:transform var(--d3) var(--ease),box-shadow var(--d3) var(--ease)}
+.hcar .slide.pc:hover,.pc:hover{transform:translateY(-6px);box-shadow:rgba(0,0,0,.24) 0 14px 30px 0}
+.pc img{border-radius:var(--r-sm) var(--r-sm) 0 0}
+.pc .pc-b{padding:var(--sp-4) var(--sp-4) var(--sp-5);text-align:center;display:flex;flex-direction:column;gap:var(--sp-2);align-items:center}
+.pc .pc-t{font:600 19px/1.3 'Montserrat',sans-serif;color:var(--t-ink)}
+.pc b{font:500 16px/24px 'Montserrat',sans-serif;color:var(--t-body)}
+.slider .prev,.slider .next{background:var(--t-primary);color:var(--t-ink);border-radius:50%;box-shadow:var(--sh);transition:transform var(--d1) var(--ease)}
+.slider .prev:hover,.slider .next:hover{transform:scale(1.08)}
+.home-tag{font:400 19px/1.5 'Montserrat',sans-serif;color:var(--t-ink)}
+/* títulos de sección */
+.uline{font:600 clamp(28px,3.4vw,40px)/1.2 'Montserrat',sans-serif;color:var(--t-ink)}
+.uline::after{width:96px;height:3px;background:var(--t-primary);border-radius:2px}
+.uline.left{text-align:left}.uline.left::after{margin-left:0}
+.home-gallery .sub{font:400 18px/1.5 'Montserrat',sans-serif}
+/* reseñas */
+.home-reviews{background:var(--t-dark)}
+.rev{border-radius:var(--r-sm);box-shadow:var(--sh);background:#fff;color:var(--t-body)}
+.rev blockquote{font:400 15px/1.6 'Montserrat',sans-serif}
+.rev-head .btn{background:var(--t-primary)}
+/* ubicación */
+.home-loc{padding:var(--sp-8) 0;background:#fff}
+.loc-grid{grid-template-columns:1fr 1fr;gap:var(--sp-7);align-items:stretch}
+.home-loc p{font:400 17px/1.75 'Montserrat',sans-serif;text-align:justify;color:var(--t-body);margin:0 0 var(--sp-4)}
+.loc-map iframe{height:100%;min-height:380px;border-radius:var(--r-sm);box-shadow:var(--sh)}
+/* footer / enlaces */
+a{transition:color var(--d1) var(--ease)}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}

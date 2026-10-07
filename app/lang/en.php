@@ -108,6 +108,7 @@ return [
     'home.write_review' => 'Write a review',
     'home.client' => 'Customer',
     'home.location' => 'Our location',
+    'home.location_text' => '<p>Zazil Tunich is in Valladolid, Yucatán, only 45 km from Chichén Itzá, one of the Seven Wonders of the World, and about 2 hours from Cancún and Playa del Carmen. Getting here is easy via Carretera Yalcobá-Xtut Km. 6, minutes from downtown Valladolid, a Magical Town.</p><p>Come and live a unique museum cenote, surrounded by nature, culture and exclusivity.</p>',
     'footer.contactpage' => 'Contact',
     'footer.howto' => 'How to get here',
     'footer.copy' => 'Copyright ©',

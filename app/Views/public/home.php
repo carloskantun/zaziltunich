@@ -111,11 +111,17 @@ if (!$slides && $heroImg) {
 </section>
 <?php endif; ?>
 
-<?php if ($map || $loc): ?>
+<?php
+if (!$map) {
+    $map = 'https://www.google.com/maps?q=' . rawurlencode('Zazil Tunich Cenote Museo, ' . $si['address']) . '&output=embed&hl=' . \App\Core\I18n::lang();
+}
+if (!trim(strip_tags((string) $loc))) {
+    $loc = t('home.location_text');
+}
+?>
 <section class="home-loc">
   <div class="home-w loc-grid">
     <div class="prose"><h2 class="uline left"><?= e(t('home.location')) ?></h2><?= $loc ?></div>
-    <?php if ($map): ?><div class="loc-map"><iframe src="<?= e($map) ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa"></iframe></div><?php endif; ?>
+    <div class="loc-map"><iframe src="<?= e($map) ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa"></iframe></div>
   </div>
 </section>
-<?php endif; ?>
