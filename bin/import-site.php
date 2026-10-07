@@ -79,12 +79,14 @@ function http(string $url, array $headers = []): ?string
         $url = preg_replace('#^http://(?:www\.)?' . preg_quote($bh, '#') . '#i', 'https://' . $bh, $url) ?? $url;
     }
     $url = preg_replace('#^(https?://)www\.' . preg_quote($bh, '#') . '#i', '$1' . $bh, $url) ?? $url;
+    usleep(200000); // pausa breve para no saturar el sitio ni activar su firewall
     $h = array_merge(['User-Agent: Mozilla/5.0 (ZazilTunichImporter)', 'Accept-Language: es,en;q=0.8'], $headers);
     if (function_exists('curl_init')) {
         $c = curl_init($url);
         curl_setopt_array($c, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 5, CURLOPT_TIMEOUT => 40, CURLOPT_HTTPHEADER => $h, CURLOPT_ENCODING => '']);
         $body = curl_exec($c);
         $code = (int) curl_getinfo($c, CURLINFO_RESPONSE_CODE);
+        $GLOBALS['LASTERR'] = $body === false ? 'curl: ' . curl_error($c) : 'HTTP ' . $code;
         curl_close($c);
         return ($body !== false && $code >= 200 && $code < 300) ? (string) $body : null;
     }
@@ -638,6 +640,12 @@ function enUrl(string $esUrl, string $base): string
 
 // ================================================================ 1. SITIO: logo y portada
 $home = http($BASE . '/');
+if ($home === null) {
+    fwrite(STDERR, "\n✗ No se pudo leer {$BASE}/ → " . ($GLOBALS['LASTERR'] ?? 'sin detalle (¿falta la extensión curl y falla file_get_contents?)') . "\n"
+        . "  403/429/503 = el sitio bloquea temporalmente tu IP (espera 15-30 min o usa otra red/hotspot del teléfono).\n"
+        . "  'curl: Could not resolve host' / 'timed out' = problema de internet o DNS en este equipo.\n");
+    exit(1);
+}
 $homeX = $home ? dom($home) : null;
 
 if (in_array('site', $ONLY, true)) {
