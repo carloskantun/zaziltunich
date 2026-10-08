@@ -8,6 +8,8 @@ return [
     'nav.contact' => 'Contacto',
     'nav.lang_switch' => 'EN',
     'home.hero_title' => 'Único Cenote Museo de México',
+    'home.intro_title' => 'Zazil Tunich, el Cenote más premiado de los Cenotes de Yucatán',
+    'home.discover' => 'Conoce Zazil Tunich',
     'home.hero_cta' => 'Reservar',
     'home.experiences' => 'Nuestras experiencias',
     'home.tagline' => 'Redefiniendo los estándares del lujo: "naturaleza, cultura y exclusividad".',

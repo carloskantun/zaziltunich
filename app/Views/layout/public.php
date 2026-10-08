@@ -27,19 +27,22 @@ $logo = is_file(ROOT . '/public/uploads/site/logo.png') ? raw_url('uploads/site/
 <?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
 <link rel="alternate" hreflang="es" href="<?= e(url($path, 'es')) ?>">
 <link rel="alternate" hreflang="en" href="<?= e(url($path, 'en')) ?>">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap">
+<link rel="preload" href="<?= e(asset('fonts/montserrat-jtusjig1_i6t8kchkm459wlhyw.woff2')) ?>" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="<?= e(asset('css/fonts.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/reference.css')) ?>">
 </head>
-<body class="<?= e($bodyClass) ?>">
-<?php if (is_preview_host()): ?><div role="status" style="background:#173c2d;color:#fff;text-align:center;padding:10px 16px;font:600 14px/1.4 system-ui,sans-serif">Versión de revisión para el cliente · No se aceptan reservas reales</div><?php endif; ?>
+<body class="<?= e($bodyClass) ?> route-<?= e(trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($path)), '-') ?: 'home') ?><?= is_preview_host() ? ' preview' : '' ?>">
+<?php if (is_preview_host()): ?><div class="preview-note" role="status">Versión de revisión para el cliente · No se aceptan reservas reales</div><?php endif; ?>
 <header class="site-header">
+ <div class="site-header-inner">
   <a class="brand" href="<?= e(url('/')) ?>"><?php if ($logo): ?><img src="<?= e($logo) ?>" alt="<?= e($site) ?>"><?php else: ?><span><?= e(strtoupper($site)) ?></span><?php endif; ?></a>
   <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="<?= e(t('nav.menu')) ?>"><label for="nav-toggle" class="burger"><i></i><i></i><i></i></label>
   <nav>
     <?php foreach ($nav as $n): ?><a href="<?= e($n['href']) ?>"<?= $n['on'] ? ' class="on"' : '' ?>><?= e($n['label']) ?></a><?php endforeach; ?>
     <a class="lang" href="<?= e(url($path, $other)) ?>"><?php if ($flag = site_file('flags/' . $other . '.png')): ?><img src="<?= e($flag) ?>" alt="" width="20" height="15"><?php endif; ?><?= e(t('nav.lang_switch')) ?></a>
   </nav>
+ </div>
 </header>
 <main><?= $content ?></main>
 <?php $si = site_info(); $badge = site_file('badge-tripadvisor.png'); $taUrl = $si['social']['tripadvisor'] ?? '#'; ?>

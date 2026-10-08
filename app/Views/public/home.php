@@ -41,15 +41,15 @@ if (!$slides && $heroImg) {
     <?php foreach ($slides as $i => $sl): ?><div class="hs<?= $i === 0 ? ' on' : '' ?>" style="background-image:url(<?= e($sl) ?>)"></div><?php endforeach; ?>
   </div>
   <div class="hero-inner">
-    <h1><?= e(t('home.hero_title')) ?></h1>
+    <h2 class="hero-title"><?= e(t('home.hero_title')) ?></h2>
     <p class="gold"><?= e(t('home.hero_sub')) ?></p>
     <a class="btn" href="<?= e(url('/reservaciones')) ?>"><?= e(t('home.hero_cta')) ?></a>
   </div>
-  <a class="hero-down" href="#intro" aria-label="↓"><?= icon('arrow-down') ?></a>
+  <a class="hero-down" href="#intro" aria-label="<?= e(t('home.discover')) ?>"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 10v20m-7-7 7 7 7-7" fill="none" stroke="currentColor" stroke-width="3"/></svg></a>
 </section>
 
 <?php if ($introHtml !== ''): ?>
-<section class="home-intro" id="intro"><div class="home-w prose"><?= $introHtml ?></div></section>
+<section class="home-intro" id="intro"><div class="home-w"><h1 class="home-heading"><?= e(t('home.intro_title')) ?></h1><div class="prose"><?= $introHtml ?></div></div></section>
 <?php endif; ?>
 
 <?php if ($video): ?>

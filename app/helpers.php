@@ -51,7 +51,9 @@ function raw_url(string $path = '/'): string
 
 function asset(string $path): string
 {
-    return raw_url('assets/' . ltrim($path, '/'));
+    $path = ltrim($path, '/');
+    $file = ROOT . '/public/assets/' . $path;
+    return raw_url('assets/' . $path) . (is_file($file) ? '?v=' . filemtime($file) : '');
 }
 
 /** Traducción de cadenas de la interfaz. */

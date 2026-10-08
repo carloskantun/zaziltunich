@@ -8,6 +8,8 @@ return [
     'nav.contact' => 'Contact',
     'nav.lang_switch' => 'ES',
     'home.hero_title' => 'The only Cenote Museum in Mexico',
+    'home.intro_title' => 'Zazil Tunich, the most awarded cenote in Yucatán',
+    'home.discover' => 'Discover Zazil Tunich',
     'home.hero_cta' => 'Book now',
     'home.experiences' => 'Our experiences',
     'home.tagline' => 'Redefining luxury: "nature, culture and exclusivity".',

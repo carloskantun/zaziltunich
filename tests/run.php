@@ -6,7 +6,7 @@ require __DIR__ . '/../app/bootstrap.php';
 
 use App\Core\Config;
 use App\Core\Database as DB;
-use App\Domain\{Availability, BookingService, Catalog, Pricing, Seeder, Settings};
+use App\Domain\{Availability, BookingService, Catalog, ContentLayout, Pricing, Seeder, Settings};
 
 $pass = 0;
 $fail = 0;
@@ -161,6 +161,15 @@ check('fecha pasada no reservable', Availability::slots($cenote, date('Y-m-d', s
 check('money entero', money(123400), '$ 1,234');
 check('money centavos', money(123450), '$ 1,234.50');
 check('to_cents', to_cents('1,234.50'), 123450);
+
+// Las columnas importadas conservan contenido, enlaces, imágenes y controles.
+$source = '<section class="sec"><div class="slider"><img src="/uploads/foto.webp" alt="Cenote"><button type="button">Siguiente</button></div><p>Experiencia única: <a href="/romance">México &amp; Yucatán</a></p></section>';
+$columns = ContentLayout::columns($source);
+check('columnas conservan texto UTF-8', str_contains($columns, 'Experiencia única:'), true);
+check('columnas conservan enlace', str_contains($columns, 'href="/romance"'), true);
+check('columnas conservan imagen y control', substr_count($columns, '<img') + substr_count($columns, '<button'), 2);
+check('columnas no se duplican al repetir', ContentLayout::columns($columns), $columns);
+check('galería sin texto no cambia de distribución', ContentLayout::columns('<section class="sec"><div class="slider">Foto</div></section>'), '<section class="sec"><div class="slider">Foto</div></section>');
 
 echo "\n$pass correctas, $fail fallidas\n";
 exit($fail > 0 ? 1 : 0);
