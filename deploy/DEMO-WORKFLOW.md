@@ -78,3 +78,11 @@ runuser -u zazilweb -- /usr/bin/flock -n /home/zazilweb/.zazil-deploy.lock /bin/
 - Para revertir código publicado, preparar un commit de reversión revisado en GitHub y dejar que el cron lo aplique. Una reversión de código no deshace cambios de datos o esquema: revisar compatibilidad y restauración antes de actuar.
 
 No cambiar DNS, servicios, cron ni otros sitios del VPS como parte de una mejora del demo. `DEPLOY-VPS.md` contiene una guía genérica de instalación; este documento es la referencia de la instalación actual.
+
+## Publicación de contenido verificada el 8 de octubre de 2026
+
+La vista local de `localhost:8091` se sirve desde `/Users/programacion/Projects/zaziltunich`, una carpeta diferente del checkout de GitHub. Comparar ambas antes de publicar: el checkout de GitHub ya contiene mejoras de código y protecciones del demo que esa copia local no tiene. No reemplazarlo entero por la copia local.
+
+Se publicaron 29 páginas, 150 entradas, 16 experiencias y 681 archivos de uploads de la copia local, conservando la configuración, usuarios y ajustes de contacto/pago del servidor. Hay respaldos privados fuera del directorio público en `/home/zazilweb/demo-backups`. El contenido publicable está versionado en `demo/content.json`; ver `demo/README.md` para transferir imágenes y aplicar los datos explícitamente.
+
+El cron de las 12:20 (Cancún) actualizó automáticamente hasta `515dcec`; el log confirmó migraciones y `Listo:`. Después se aplicó el snapshot bajo el mismo lock. Se verificaron portada ES/EN, todas las páginas del menú, blog, producto, logo y foto de portada con HTTP 200. La cabecera noindex y el bloqueo 403 de confirmación ES/EN se conservaron. Se comprobó visualmente la portada y se compararon hashes de los 681 uploads sin diferencias.
