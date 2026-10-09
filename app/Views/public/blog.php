@@ -9,7 +9,7 @@
         <a class="card-img" href="<?= e($href) ?>"><?php if ($img): ?><img src="<?= e($img) ?>" alt="" loading="lazy"><?php else: ?><span class="ph"></span><?php endif; ?></a>
         <div class="card-body">
           <h3><a href="<?= e($href) ?>"><?= e($p['t']['title']) ?></a></h3>
-          <p class="excerpt"><?= e(mb_strimwidth(strip_tags((string) $p['t']['excerpt']), 0, 140, '…')) ?></p>
+          <p class="excerpt"><?= e(mb_strimwidth(strip_tags((string) $p['t']['excerpt']), 0, 115, '…')) ?></p>
           <div class="card-foot"><small><?= e(date_label(substr($p['published_at'], 0, 10))) ?></small><a class="btn btn-sm" href="<?= e($href) ?>"><?= e(t('blog.read')) ?></a></div>
         </div>
       </article>

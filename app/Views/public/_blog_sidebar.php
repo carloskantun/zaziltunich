@@ -2,6 +2,18 @@
 use App\Domain\{Catalog, Content};
 $si = site_info();
 $cats = Content::categories();
+// El widget de WordPress ordena las categorías por nombre, conservando su jerarquía.
+$sortCats = static function (array &$list) use (&$sortCats): void {
+    usort($list, static fn ($a, $b) => strnatcasecmp(
+        strtr(mb_strtolower($a['name']), ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ñ'=>'n']),
+        strtr(mb_strtolower($b['name']), ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ñ'=>'n'])
+    ));
+    foreach ($list as &$category) {
+        $sortCats($category['children']);
+    }
+    unset($category);
+};
+$sortCats($cats);
 $dark = site_file('logo-dark.png');
 $ig = [];
 foreach (glob(ROOT . '/public/uploads/site/ig/*.{webp,jpg,png}', GLOB_BRACE) ?: [] as $f) {
@@ -23,7 +35,7 @@ $renderCats = static function (array $list, int $depth) use (&$renderCats): void
 ?>
 <aside class="side">
   <section class="widget"><h3 class="wt"><?= e(t('blog.follow')) ?></h3>
-    <div class="social sq"><?php foreach (array_diff_key($si['social'], ['x-twitter' => 1]) as $ic => $href): ?><a href="<?= e($href) ?>" target="_blank" rel="noopener" aria-label="<?= e($ic) ?>"><?= icon($ic) ?></a><?php endforeach; ?></div>
+    <div class="social sq"><?php foreach (array_intersect_key(array_replace(array_fill_keys(['facebook-f', 'instagram', 'tripadvisor'], ''), $si['social']), array_flip(['facebook-f', 'instagram', 'tripadvisor'])) as $ic => $href): ?><a href="<?= e($href) ?>" target="_blank" rel="noopener" aria-label="<?= e($ic) ?>"><?= icon($ic) ?></a><?php endforeach; ?></div>
   </section>
   <section class="widget">
     <form class="search" method="get" action="<?= e(url('/blog')) ?>" role="search"><input type="search" name="s" placeholder="<?= e(t('blog.search')) ?>" value="<?= e($_GET['s'] ?? '') ?>" aria-label="<?= e(t('blog.search')) ?>"><button aria-label="<?= e(t('blog.search')) ?>"><?= icon('magnifying-glass') ?></button></form>

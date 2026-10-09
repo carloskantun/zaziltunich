@@ -157,3 +157,28 @@ body[class*="route-reservaciones"] .titlebar h1,.route-blog .titlebar h1{font:50
  .site-footer .copy{margin:0 -16px}
  .home-loc .loc-grid{grid-template-columns:1fr}
 }
+
+/* Blog: extractos de texto normal y medidas del archivo WordPress. */
+.blog-page{padding:50px 16px}
+.blog-layout{padding:0 10px;grid-template-columns:minmax(0,3.14fr) minmax(240px,1fr);gap:40px}
+.blog-page .post-card{box-shadow:none}
+.blog-page .post-card .excerpt{font:400 14px/20px var(--font);color:#333;text-align:left;margin:0 0 34.4px}
+.blog-page .post-card .card-body{padding:20px;min-height:245px}
+.blog-page .post-card .card-foot{padding-top:0}
+.blog-page .post-card .card-foot small{font-size:14px}
+.blog-page .post-card .btn{padding:8px 24px;font:500 14px/21px var(--font);border-radius:20px}
+.blog-page .side{padding-top:20px}
+.blog-page .social.sq{gap:10px}
+.blog-page .social.sq a{color:var(--gold);width:40px;height:40px;font-size:20px}
+.blog-page .social.sq a:hover{color:#fff}
+.blog-page .search input{font-size:15px;padding:0 10px}
+.blog-page .cats a{font-size:14px;line-height:22px;padding:4px 0}
+@media(max-width:1000px){.blog-layout{grid-template-columns:1fr;padding:0;gap:40px}}
+@media(max-width:767px){.blog-page .social.sq a{width:44px;height:44px}.blog-page .post-card .card-body{padding:20px;min-height:245px}}
+
+.blog-page .post-card h3{margin-bottom:20px}
+.band.blog-page{padding:50px 16px}
+.route-blog .titlebar{background-position:center bottom}
+.blog-page .post-card .card-body{gap:0}
+.blog-page .post-card .card-foot{margin-top:0}
+.blog-page .grid.two{margin-top:0;gap:32px}
